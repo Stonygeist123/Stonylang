@@ -45,7 +45,7 @@ namespace Stonylang_CSharp.Lexer
         LBracket, RBracket, Arrow, QuestionMark, Colon,
 
         // Exprs
-        NumberExpr, BinaryExpr, GroupingExpr, UnaryExpr,
+        LiteralExpr, GroupingExpr, UnaryExpr, BinaryExpr,
 
         Whitespace, Bad, EOF
     }

@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using Stonylang_CSharp.Lexer;
+using Stonylang_CSharp.SyntaxFacts;
 
 namespace Stonylang_CSharp.Parser
 {
@@ -16,7 +17,7 @@ namespace Stonylang_CSharp.Parser
             Token token;
             do
             {
-                token = lexer.GetToken();
+                token = lexer.Lex();
                 if (token.Kind != TokenKind.Whitespace && token.Kind != TokenKind.Bad) _tokens.Add(token);
             } while (token.Kind != TokenKind.EOF);
 
@@ -24,33 +25,25 @@ namespace Stonylang_CSharp.Parser
         }
         public SyntaxTree.SyntaxTree Parse()
         {
-            ExprNode expr = ParseTerm();
+            ExprNode expr = ParseExpression();
             Token eofToken = Match(TokenKind.EOF);
             return new SyntaxTree.SyntaxTree(_diagnostics, expr, eofToken);
         }
 
-        public ExprNode ParseExpression() => ParseTerm();
-        private ExprNode ParseTerm()
+        private ExprNode ParseExpression(int parentPrecedence = 0)
         {
-            ExprNode left = ParseFactor();
-            while (Current.Kind == TokenKind.Plus || Current.Kind == TokenKind.Minus)
-            {
-                Token op = Advance();
-                ExprNode right = ParseFactor();
-                left = new BinaryExpr(left, op, right);
-            }
+            ExprNode left;
+            int unOpPrecedence = Current.Kind.GetUnaryOpPrecedence();
+            if (unOpPrecedence != 0 && unOpPrecedence >= parentPrecedence)
+                left = new UnaryExpr(Advance(), ParseExpression(unOpPrecedence));
+            else
+                left = ParsePrimary();
 
-            return left;
-        }
-
-        private ExprNode ParseFactor()
-        {
-            ExprNode left = ParsePrimary();
-            while (Current.Kind == TokenKind.Star || Current.Kind == TokenKind.Slash)
+            while (true)
             {
-                Token op = Advance();
-                ExprNode right = ParsePrimary();
-                left = new BinaryExpr(left, op, right);
+                int precende = Current.Kind.GetBinaryOpPrecedence();
+                if (precende == 0 || precende <= parentPrecedence) break;
+                left = new BinaryExpr(left, Advance(), ParseExpression(precende));
             }
 
             return left;

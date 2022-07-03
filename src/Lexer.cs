@@ -17,7 +17,7 @@ namespace Stonylang_CSharp.Lexer
 
         public Lexer(string source) => _source = source;
 
-        public Token GetToken()
+        public Token Lex()
         {
             if (_position >= _source.Length) return new Token(TokenKind.EOF, "\0", null, new(_position, 0), _line);
             if (char.IsDigit(Current))
@@ -49,6 +49,8 @@ namespace Stonylang_CSharp.Lexer
                     return new Token(TokenKind.LParen, "(", null, new(_position++, 1), _line);
                 case ')':
                     return new Token(TokenKind.RParen, ")", null, new(_position++, 1), _line);
+                case '~':
+                    return new Token(TokenKind.Inv, "~", null, new(_position++, 1), _line);
                 default:
                     _diagnostics.Add($"Error: Unexpected character '{Current}'.");
                     return new Token(TokenKind.Bad, "", null, new(_position++, 1), _line);

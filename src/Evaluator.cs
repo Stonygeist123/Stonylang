@@ -14,6 +14,19 @@ namespace Stonylang_CSharp.Evaluator
         private int EvaluateExpression(ExprNode node)
         {
             if (node is LiteralExpr n) return (int)n.LiteralToken.Literal;
+            if (node is GroupingExpr g) return EvaluateExpression(g.Expr);
+            if (node is UnaryExpr u)
+            {
+                int operand = EvaluateExpression(u.Operand);
+                return u.Op.Kind switch
+                {
+                    TokenKind.Plus => operand,
+                    TokenKind.Minus => -operand,
+                    TokenKind.Inv => ~operand,
+                    _ => throw new Exception($"Unexpected unary operator <{u.Op.Kind}>.")
+
+                };
+            }
             if (node is BinaryExpr b)
             {
                 int left = EvaluateExpression(b.Left);
@@ -25,11 +38,10 @@ namespace Stonylang_CSharp.Evaluator
                     TokenKind.Minus => left - right,
                     TokenKind.Star => left * right,
                     TokenKind.Slash => left / right,
-                    _ => throw new Exception($"Unexpected binary operator {b.Op.Kind}.")
+                    _ => throw new Exception($"Unexpected binary operator <{b.Op.Kind}>.")
                 };
             }
 
-            if (node is GroupingExpr g) return EvaluateExpression(g.Expr);
             throw new Exception($"Unexpected expression operator {node.Kind}.");
         }
     }

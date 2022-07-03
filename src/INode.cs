@@ -18,7 +18,7 @@ namespace Stonylang_CSharp.Parser
     public sealed class LiteralExpr : ExprNode
     {
         public LiteralExpr(Token literalToken) => LiteralToken = literalToken;
-        public override TokenKind Kind => TokenKind.NumberExpr;
+        public override TokenKind Kind => TokenKind.LiteralExpr;
         public Token LiteralToken { get; }
 
         public override IEnumerable<INode> GetChildren()
@@ -74,21 +74,20 @@ namespace Stonylang_CSharp.Parser
 
     public sealed class UnaryExpr : ExprNode
     {
-        public UnaryExpr(ExprNode operand, INode op)
+        public UnaryExpr(INode op, ExprNode operand)
         {
             Operand = operand;
             Op = op;
         }
 
         public override TokenKind Kind => TokenKind.UnaryExpr;
-
-        public ExprNode Operand { get; }
         public INode Op { get; }
+        public ExprNode Operand { get; }
 
         public override IEnumerable<INode> GetChildren()
         {
-            yield return Operand;
             yield return Op;
+            yield return Operand;
         }
     }
 }
