@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Stonylang_CSharp.Lexer
 {
-    class Lexer
+    internal sealed class Lexer
     {
         private readonly string _source;
         private readonly int _line = 1;

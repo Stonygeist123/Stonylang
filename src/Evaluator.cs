@@ -1,14 +1,10 @@
 ﻿using Stonylang_CSharp.Lexer;
 using Stonylang_CSharp.Parser;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Stonylang_CSharp.Evaluator
 {
-    class Evaluator
+    public sealed class Evaluator
     {
         private readonly ExprNode _root;
 
@@ -17,7 +13,7 @@ namespace Stonylang_CSharp.Evaluator
         public int Evaluate() => EvaluateExpression(_root);
         private int EvaluateExpression(ExprNode node)
         {
-            if (node is NumberExpr n) return (int)n.NumberToken.Literal;
+            if (node is LiteralExpr n) return (int)n.LiteralToken.Literal;
             if (node is BinaryExpr b)
             {
                 int left = EvaluateExpression(b.Left);

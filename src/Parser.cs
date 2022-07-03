@@ -4,7 +4,7 @@ using Stonylang_CSharp.Lexer;
 
 namespace Stonylang_CSharp.Parser
 {
-    class Parser
+    internal sealed class Parser
     {
         private readonly List<Token> _tokens = new();
         private int _position = 0;
@@ -61,7 +61,7 @@ namespace Stonylang_CSharp.Parser
             if (Current.Kind == TokenKind.LParen)
                 return new GroupingExpr(Advance(), ParseExpression(), Match(TokenKind.RParen));
             Token number = Match(TokenKind.Number);
-            return new NumberExpr(number);
+            return new LiteralExpr(number);
         }
 
         private Token Peek(int offset = 0) => _position + offset >= _tokens.Count ? _tokens.Last() : _tokens[_position + offset];

@@ -3,7 +3,7 @@ using System.Linq;
 
 namespace Stonylang_CSharp
 {
-    class Program
+    internal static class Program
     {
         static void Main()
         {
@@ -20,17 +20,20 @@ namespace Stonylang_CSharp
                     Console.WriteLine(showTree ? "Showing parse trees." : "Not showing parse trees.");
                     continue;
                 }
-                else if (input.ToLower() == "#cls") Console.Clear();
+                else if (input.ToLower() == "#cls")
+                {
+                    Console.Clear();
+                    continue;
+                }
 
                 SyntaxTree.SyntaxTree syntaxTree = SyntaxTree.SyntaxTree.Parse(input);
 
-                var color = Console.ForegroundColor;
                 if (syntaxTree.Diagnostics.Any())
                 {
                     Console.ForegroundColor = ConsoleColor.DarkRed;
                     foreach (string diagnostic in syntaxTree.Diagnostics)
                         Console.WriteLine(diagnostic);
-                    Console.ForegroundColor = color;
+                    Console.ResetColor();
                 }
                 else
                 {
@@ -38,7 +41,7 @@ namespace Stonylang_CSharp
                     {
                         Console.ForegroundColor = ConsoleColor.DarkBlue;
                         PrettyPrint(syntaxTree.Root);
-                        Console.ForegroundColor = color;
+                        Console.ResetColor();
                     }
 
                     Evaluator.Evaluator evaluator = new(syntaxTree.Root);
@@ -65,10 +68,10 @@ namespace Stonylang_CSharp
             }
             Console.WriteLine();
 
-            indent += isLast ? "    " : "|   ";
-            Parser.INode last = node.GetChildren().LastOrDefault();
+            indent += isLast ? "   " : "|   ";
+            Parser.INode lastChild = node.GetChildren().LastOrDefault();
 
-            foreach (var child in node.GetChildren()) PrettyPrint(child, indent, child == last);
+            foreach (var child in node.GetChildren()) PrettyPrint(child, indent, child == lastChild);
         }
     }
 }

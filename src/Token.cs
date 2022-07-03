@@ -6,7 +6,7 @@ using System.Collections.Generic;
 namespace Stonylang_CSharp.Lexer
 {
 
-    enum TokenKind
+    public enum TokenKind
     {
         // Arithmetic
         Plus, Minus, Star, Slash, Mod, Power, Increment, Decrement,
@@ -45,11 +45,11 @@ namespace Stonylang_CSharp.Lexer
         LBracket, RBracket, Arrow, QuestionMark, Colon,
 
         // Exprs
-        NumberExpr, BinaryExpr, GroupingExpr,
+        NumberExpr, BinaryExpr, GroupingExpr, UnaryExpr,
 
         Whitespace, Bad, EOF
     }
-    struct Token : INode
+    public struct Token : INode
     {
         public Token(TokenKind _kind, string _lexeme, object _literal, Tuple<int, int> _position, int _line)
         {

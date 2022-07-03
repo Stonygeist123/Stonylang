@@ -3,31 +3,31 @@ using System.Collections.Generic;
 
 namespace Stonylang_CSharp.Parser
 {
-    interface INode
+    public interface INode
     {
         public abstract TokenKind Kind { get; }
         public abstract IEnumerable<INode> GetChildren();
     }
 
-    abstract class ExprNode : INode
+    public abstract class ExprNode : INode
     {
         public abstract TokenKind Kind { get; }
         public abstract IEnumerable<INode> GetChildren();
     }
 
-    sealed class NumberExpr : ExprNode
+    public sealed class LiteralExpr : ExprNode
     {
-        public NumberExpr(Token numberToken) => NumberToken = numberToken;
+        public LiteralExpr(Token literalToken) => LiteralToken = literalToken;
         public override TokenKind Kind => TokenKind.NumberExpr;
-        public Token NumberToken { get; }
+        public Token LiteralToken { get; }
 
         public override IEnumerable<INode> GetChildren()
         {
-            yield return NumberToken;
+            yield return LiteralToken;
         }
     }
 
-    sealed class GroupingExpr : ExprNode
+    public sealed class GroupingExpr : ExprNode
     {
         public GroupingExpr(Token lParen, ExprNode expr, Token rParen)
         {
@@ -50,7 +50,7 @@ namespace Stonylang_CSharp.Parser
         }
     }
 
-    sealed class BinaryExpr : ExprNode
+    public sealed class BinaryExpr : ExprNode
     {
         public BinaryExpr(ExprNode left, INode op, ExprNode right)
         {
@@ -69,6 +69,26 @@ namespace Stonylang_CSharp.Parser
             yield return Left;
             yield return Op;
             yield return Right;
+        }
+    }
+
+    public sealed class UnaryExpr : ExprNode
+    {
+        public UnaryExpr(ExprNode operand, INode op)
+        {
+            Operand = operand;
+            Op = op;
+        }
+
+        public override TokenKind Kind => TokenKind.UnaryExpr;
+
+        public ExprNode Operand { get; }
+        public INode Op { get; }
+
+        public override IEnumerable<INode> GetChildren()
+        {
+            yield return Operand;
+            yield return Op;
         }
     }
 }
