@@ -12,7 +12,9 @@ namespace Stonylang_CSharp.Binding
     internal enum BoundUnaryOpKind
     {
         Identity,
-        Negation
+        Negation,
+        Inv,
+        LogicalNegation
     }
 
     internal enum BoundBinaryOpKind
@@ -20,7 +22,15 @@ namespace Stonylang_CSharp.Binding
         Addition,
         Subtraction,
         Multiplication,
-        Division
+        Division,
+        Power,
+        LogicalAnd,
+        LogicalOr,
+        LogicalNotEq,
+        LogicalEq,
+        And,
+        Or,
+        Xor
     }
 
     internal abstract class BoundNode
@@ -44,31 +54,31 @@ namespace Stonylang_CSharp.Binding
 
     internal sealed class BoundUnaryExpr : BoundExpr
     {
-        public BoundUnaryExpr(BoundUnaryOpKind opKind, BoundExpr operand)
+        public BoundUnaryExpr(BoundUnaryOperator op, BoundExpr operand)
         {
-            OpKind = opKind;
+            Op = op;
             Operand = operand;
         }
 
-        public override Type Type => Operand.Type;
+        public override Type Type => Op.ResultType;
         public override BoundNodeKind Kind => BoundNodeKind.UnaryExpr;
-        public BoundUnaryOpKind OpKind { get; }
+        public BoundUnaryOperator Op { get; }
         public BoundExpr Operand { get; }
     }
 
     internal sealed class BoundBinaryExpr : BoundExpr
     {
-        public BoundBinaryExpr(BoundExpr left, BoundBinaryOpKind opKind, BoundExpr right)
+        public BoundBinaryExpr(BoundExpr left, BoundBinaryOperator op, BoundExpr right)
         {
             Left = left;
-            OpKind = opKind;
+            Op = op;
             Right = right;
         }
 
-        public override Type Type => Left.Type;
+        public override Type Type => Op.ResultType;
         public override BoundNodeKind Kind => BoundNodeKind.BinaryExpr;
         public BoundExpr Left { get; }
-        public BoundBinaryOpKind OpKind { get; }
+        public BoundBinaryOperator Op { get; }
         public BoundExpr Right { get; }
     }
 }

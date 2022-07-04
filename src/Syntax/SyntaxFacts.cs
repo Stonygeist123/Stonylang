@@ -7,13 +7,20 @@ namespace Stonylang_CSharp.SyntaxFacts
     {
         public static int GetUnaryOpPrecedence(this TokenKind kind) => kind switch
         {
-            TokenKind.Plus or TokenKind.Minus or TokenKind.Inv => 3,
+            TokenKind.Plus or TokenKind.Minus or TokenKind.Inv or TokenKind.Not => 10,
             _ => 0
         };
         public static int GetBinaryOpPrecedence(this TokenKind kind) => kind switch
         {
-            TokenKind.Star or TokenKind.Slash => 2,
-            TokenKind.Plus or TokenKind.Minus => 1,
+            TokenKind.Power => 9,
+            TokenKind.Star or TokenKind.Slash => 8,
+            TokenKind.Plus or TokenKind.Minus => 7,
+            TokenKind.EqEq or TokenKind.NotEq => 6,
+            TokenKind.And => 5,
+            TokenKind.Xor => 4,
+            TokenKind.Or => 3,
+            TokenKind.LogicalAnd => 2,
+            TokenKind.LogicalOr => 1,
             _ => 0
         };
 

@@ -9,7 +9,8 @@ namespace Stonylang_CSharp.Lexer
         private int _position = 0;
         private readonly List<string> _diagnostics = new();
         public IEnumerable<string> Diagnostics => _diagnostics;
-        private char Current => _position >= _source.Length ? '\0' : _source[_position];
+        private char Current => Peek();
+        private char Peek(int offset = 0) => _position + offset >= _source.Length ? '\0' : _source[_position + offset];
 
         public Lexer(string source) => _source = source;
 
@@ -44,6 +45,14 @@ namespace Stonylang_CSharp.Lexer
                 case '-':
                     return new Token(TokenKind.Minus, "-", null, new(_position++, 1), _line);
                 case '*':
+                    if (Peek(1) == '*')
+                    {
+                        if (Peek(1) == '=')
+                            return new Token(TokenKind.PowerEq, "**=", null, new(_position += 2, 2), _line);
+                        return new Token(TokenKind.Power, "**", null, new(_position += 2, 2), _line);
+                    }
+                    if (Peek(1) == '=')
+                        return new Token(TokenKind.StarEq, "*=", null, new(_position += 2, 2), _line);
                     return new Token(TokenKind.Star, "*", null, new(_position++, 1), _line);
                 case '/':
                     return new Token(TokenKind.Slash, "/", null, new(_position++, 1), _line);
@@ -51,6 +60,30 @@ namespace Stonylang_CSharp.Lexer
                     return new Token(TokenKind.LParen, "(", null, new(_position++, 1), _line);
                 case ')':
                     return new Token(TokenKind.RParen, ")", null, new(_position++, 1), _line);
+                case '&':
+                    if (Peek(1) == '&')
+                        return new Token(TokenKind.LogicalAnd, "&&", null, new(_position += 2, 2), _line);
+                    else if (Peek(1) == '=')
+                        return new Token(TokenKind.AndEq, "&=", null, new(_position += 2, 2), _line);
+                    return new Token(TokenKind.And, "&", null, new(_position++, 1), _line);
+                case '|':
+                    if (Peek(1) == '|')
+                        return new Token(TokenKind.LogicalOr, "||", null, new(_position += 2, 2), _line);
+                    else if (Peek(1) == '=')
+                        return new Token(TokenKind.OrEq, "|=", null, new(_position += 2, 2), _line);
+                    return new Token(TokenKind.Or, "|", null, new(_position++, 1), _line);
+                case '=':
+                    if (Peek(1) == '=')
+                        return new Token(TokenKind.EqEq, "==", null, new(_position += 2, 2), _line);
+                    return new Token(TokenKind.Equals, "=", null, new(_position++, 1), _line);
+                case '!':
+                    if (Peek(1) == '=')
+                        return new Token(TokenKind.NotEq, "!=", null, new(_position += 2, 2), _line);
+                    return new Token(TokenKind.Not, "~", null, new(_position++, 1), _line);
+                case '^':
+                    if (Peek(1) == '=')
+                        return new Token(TokenKind.XorEq, "^=", null, new(_position += 2, 2), _line);
+                    return new Token(TokenKind.Xor, "^", null, new(_position++, 1), _line);
                 case '~':
                     return new Token(TokenKind.Inv, "~", null, new(_position++, 1), _line);
                 default:
