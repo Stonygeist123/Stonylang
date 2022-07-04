@@ -1,4 +1,5 @@
-﻿using Stonylang_CSharp.Lexer;
+﻿using Stonylang_CSharp.Diagnostics;
+using Stonylang_CSharp.Lexer;
 using Stonylang_CSharp.Parser;
 using System;
 using System.Collections.Generic;
@@ -94,15 +95,17 @@ namespace Stonylang_CSharp.Binding
 
     internal sealed class Binder
     {
-        private readonly List<string> _diagnostics = new();
-        public IEnumerable<string> Diagnostics => _diagnostics;
+        private readonly string _source;
+        private readonly DiagnosticBag _diagnostics = new();
+        public DiagnosticBag Diagnostics => _diagnostics;
+        public Binder(string source) => _source = source;
 
         public BoundExpr BindExpr(ExprNode expr) => expr.Kind switch
         {
             TokenKind.LiteralExpr => BindLiteralExpr((LiteralExpr)expr),
             TokenKind.UnaryExpr => BindUnaryExpr((UnaryExpr)expr),
             TokenKind.BinaryExpr => BindBinaryExpr((BinaryExpr)expr),
-            _ => throw new Exception($"Unexpected syntax <{expr.Kind}>"),
+            _ => throw new Exception($"Unexpected syntax \"{expr.Kind}\""),
         };
 
         private static BoundExpr BindLiteralExpr(LiteralExpr expr) => new BoundLiteralExpr(expr.Value ?? 0);
@@ -113,7 +116,7 @@ namespace Stonylang_CSharp.Binding
             if (boundOperator != null)
                 return new BoundUnaryExpr(boundOperator, boundOperand);
 
-            _diagnostics.Add($"Unary operator '{expr.Op.Lexeme}' is not defined for type <{boundOperand.Type}>.");
+            _diagnostics.Report(_source, expr.Op.Span, expr.Op.Line, $"Unary operator '{expr.Op.Lexeme}' is not defined for type \"{boundOperand.Type}\".", "TypeException", LogLevel.Error);
             return boundOperand;
         }
         private BoundExpr BindBinaryExpr(BinaryExpr expr)
@@ -124,7 +127,7 @@ namespace Stonylang_CSharp.Binding
             if (boundOperator != null)
                 return new BoundBinaryExpr(boundLeft, boundOperator, boundRight);
 
-            _diagnostics.Add($"Binary operator '{expr.Op.Lexeme}' is not defined for types <{boundLeft.Type}> and <{boundRight.Type}>.");
+            _diagnostics.Report(_source, expr.Op.Span, expr.Op.Line, $"Binary operator '{expr.Op.Lexeme}' is not defined for types \"{boundLeft.Type}\" and \"{boundRight.Type}\".", "TypeException", LogLevel.Error);
             return boundLeft;
         }
     }

@@ -2,6 +2,7 @@
 using System;
 using System.Linq;
 using System.Collections.Generic;
+using Stonylang_CSharp.Diagnostics;
 
 namespace Stonylang_CSharp.Lexer
 {
@@ -51,23 +52,23 @@ namespace Stonylang_CSharp.Lexer
     }
     public struct Token : INode
     {
-        public Token(TokenKind _kind, string _lexeme, object _literal, Tuple<int, int> _position, int _line)
+        public Token(TokenKind _kind, string _lexeme, object _literal, TextSpan _span, int _line)
         {
             Kind = _kind;
             Lexeme = _lexeme;
             Literal = _literal;
-            Position = _position;
+            Span = _span;
             Line = _line;
         }
 
         public TokenKind Kind { get; }
         public string Lexeme { get; }
         public object Literal { get; }
-        public Tuple<int, int> Position { get; }
+        public TextSpan Span { get; }
         public int Line { get; }
 
         public IEnumerable<INode> GetChildren() => Enumerable.Empty<INode>();
-
-        public override string ToString() => $"Kind: {Kind}\nLexeme: {Lexeme}\nPosition: [{Position.Item1}-{Position.Item2}]{(Literal != null ? $"\nLiteral: {Literal}" : "")}";
+        public override string ToString()
+            => $"Kind: {Kind}\nLexeme: {Lexeme}\nPosition: [{Span.Start}-{Span.Start + Span.Length}]{(Literal != null ? $"\nLiteral: {Literal}" : "")}";
     }
 }

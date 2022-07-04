@@ -1,20 +1,32 @@
 ﻿using Stonylang_CSharp.Binding;
-using Stonylang_CSharp.Lexer;
-using Stonylang_CSharp.Parser;
+using Stonylang_CSharp.Diagnostics;
 using System;
 
 namespace Stonylang_CSharp.Evaluator
 {
+    public sealed class EvaluationResult
+    {
+        public EvaluationResult(DiagnosticBag diagnostics, object value)
+        {
+            Diagnostics = diagnostics;
+            Value = value;
+        }
+
+        public DiagnosticBag Diagnostics { get; }
+        public object Value { get; }
+    }
+
     internal sealed class Evaluator
     {
         private readonly BoundExpr _root;
+        // private readonly string _source;
+
         public Evaluator(BoundExpr root) => _root = root;
 
         public object Evaluate() => EvaluateExpression(_root);
         private object EvaluateExpression(BoundExpr node)
         {
             if (node is BoundLiteralExpr l) return l.Value;
-            // if (node is BoundGroupingExpr g) return EvaluateExpression(g.Expr);
             if (node is BoundUnaryExpr u)
             {
                 object operand = EvaluateExpression(u.Operand);

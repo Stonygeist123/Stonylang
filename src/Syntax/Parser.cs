@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using Stonylang_CSharp.Diagnostics;
 using Stonylang_CSharp.Lexer;
 using Stonylang_CSharp.SyntaxFacts;
 
@@ -9,8 +10,10 @@ namespace Stonylang_CSharp.Parser
     {
         private readonly List<Token> _tokens = new();
         private int _position = 0;
-        private readonly List<string> _diagnostics = new();
-        public IEnumerable<string> Diagnostics => _diagnostics;
+        private readonly DiagnosticBag _diagnostics = new();
+        private readonly string _source;
+
+        public DiagnosticBag Diagnostics => _diagnostics;
         public Parser(string source)
         {
             Lexer.Lexer lexer = new(source);
@@ -22,6 +25,7 @@ namespace Stonylang_CSharp.Parser
             } while (token.Kind != TokenKind.EOF);
 
             _diagnostics.AddRange(lexer.Diagnostics);
+            _source = source;
         }
         public SyntaxTree.SyntaxTree Parse()
         {
@@ -49,12 +53,21 @@ namespace Stonylang_CSharp.Parser
             return left;
         }
 
-        public ExprNode ParsePrimary() => Current.Kind switch
+        public ExprNode ParsePrimary()
         {
-            TokenKind.LParen => new GroupingExpr(Advance(), ParseExpression(), Match(TokenKind.RParen)),
-            TokenKind.True or TokenKind.False => new LiteralExpr(Advance(), Peek(-1).Kind == TokenKind.True),
-            _ => new LiteralExpr(Match(TokenKind.Number)),
-        };
+            switch (Current.Kind)
+            {
+                case TokenKind.LParen:
+                    Advance();
+                    ExprNode expr = ParseExpression();
+                    Match(TokenKind.RParen);
+                    return expr;
+                case TokenKind.True:
+                case TokenKind.False:
+                    return new LiteralExpr(Advance(), Peek(-1).Kind == TokenKind.True);
+                default: return new LiteralExpr(Match(TokenKind.Number));
+            }
+        }
 
         private Token Peek(int offset = 0) => _position + offset >= _tokens.Count ? _tokens.Last() : _tokens[_position + offset];
         private Token Current => Peek();
@@ -67,8 +80,8 @@ namespace Stonylang_CSharp.Parser
         private Token Match(TokenKind kind)
         {
             if (Current.Kind == kind) return Advance();
-            _diagnostics.Add($"Error: Unexpected token <{Current.Kind}>. Expected <{kind}>.");
-            return new Token(kind, Current.Lexeme, null, Current.Position, Current.Line);
+            _diagnostics.Report(_source, Current.Span, Current.Line, $"Unexpected \"{Current.Kind}\", expected \"{kind}\".", "SyntaxException", LogLevel.Error);
+            return new Token(kind, Current.Lexeme, null, Current.Span, Current.Line);
         }
     }
 }

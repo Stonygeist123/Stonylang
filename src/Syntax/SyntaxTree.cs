@@ -1,20 +1,21 @@
-﻿using Stonylang_CSharp.Lexer;
+﻿using Stonylang_CSharp.Diagnostics;
+using Stonylang_CSharp.Lexer;
 using Stonylang_CSharp.Parser;
 using System.Collections.Generic;
 using System.Linq;
 
 namespace Stonylang_CSharp.SyntaxTree
 {
-    class SyntaxTree
+    public class SyntaxTree
     {
-        public SyntaxTree(IEnumerable<string> diagnostics, ExprNode root, Token eofToken)
+        public SyntaxTree(DiagnosticBag diagnostics, ExprNode root, Token eofToken)
         {
-            Diagnostics = diagnostics.ToArray();
+            Diagnostics = diagnostics;
             Root = root;
             EofToken = eofToken;
         }
 
-        public IReadOnlyList<string> Diagnostics { get; }
+        public DiagnosticBag Diagnostics { get; }
         public ExprNode Root { get; }
         public Token EofToken { get; }
 

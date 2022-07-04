@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using Stonylang_CSharp.Diagnostics;
+using System.Collections.Generic;
 
 namespace Stonylang_CSharp.Lexer
 {
@@ -7,24 +8,26 @@ namespace Stonylang_CSharp.Lexer
         private readonly string _source;
         private readonly int _line = 1;
         private int _position = 0;
-        private readonly List<string> _diagnostics = new();
-        public IEnumerable<string> Diagnostics => _diagnostics;
+        private readonly DiagnosticBag _diagnostics = new();
+        public DiagnosticBag Diagnostics => _diagnostics;
         private char Current => Peek();
         private char Peek(int offset = 0) => _position + offset >= _source.Length ? '\0' : _source[_position + offset];
 
         public Lexer(string source) => _source = source;
 
+        private Token Number()
+        {
+            int start = _position;
+            while (char.IsDigit(Current)) Advance();
+            if (!int.TryParse(_source[start.._position], out int v))
+                _diagnostics.Report(_source, new(start, _position - start), _line, $"Invalid integer literal \"{ _source[start.._position]}\".", "SyntaxException", LogLevel.Error);
+            return new Token(TokenKind.Number, _source[start.._position], v, new(start, _position - start), _line);
+        }
+
         public Token Lex()
         {
             if (_position >= _source.Length) return new Token(TokenKind.EOF, "\0", null, new(_position, 0), _line);
-            if (char.IsDigit(Current))
-            {
-                int start = _position;
-                while (char.IsDigit(Current)) Advance();
-                if (!int.TryParse(_source[start.._position], out int v))
-                    _diagnostics.Add($"Invalid integer literal \"{ _source[start.._position]}\".");
-                return new Token(TokenKind.Number, _source[start.._position], v, new(start, _position - start), _line);
-            }
+            if (char.IsDigit(Current)) return Number();
             if (char.IsWhiteSpace(Current))
             {
                 int start = _position;
@@ -87,7 +90,7 @@ namespace Stonylang_CSharp.Lexer
                 case '~':
                     return new Token(TokenKind.Inv, "~", null, new(_position++, 1), _line);
                 default:
-                    _diagnostics.Add($"Error: Unexpected character '{Current}'.");
+                    _diagnostics.Report(_source, new(_position, 1), _line, $"Unexpected character '{Current}'.", "SyntaxException", LogLevel.Error);
                     return new Token(TokenKind.Bad, "", null, new(_position++, 1), _line);
             };
         }

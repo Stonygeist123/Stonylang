@@ -34,7 +34,7 @@ namespace Stonylang_CSharp.Parser
         }
     }
 
-    public sealed class GroupingExpr : ExprNode
+    /* public sealed class GroupingExpr : ExprNode
     {
         public GroupingExpr(Token lParen, ExprNode expr, Token rParen)
         {
@@ -55,7 +55,7 @@ namespace Stonylang_CSharp.Parser
             yield return Expr;
             yield return RParen;
         }
-    }
+    } */
 
     public sealed class UnaryExpr : ExprNode
     {
