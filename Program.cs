@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Stonylang_CSharp.Binding;
+using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace Stonylang_CSharp
@@ -27,11 +29,15 @@ namespace Stonylang_CSharp
                 }
 
                 SyntaxTree.SyntaxTree syntaxTree = SyntaxTree.SyntaxTree.Parse(input);
+                Binder binder = new();
+                BoundExpr boundExpr = binder.BindExpr(syntaxTree.Root);
 
-                if (syntaxTree.Diagnostics.Any())
+                string[] diagnostics = syntaxTree.Diagnostics.Concat(binder.Diagnostics).ToArray();
+
+                if (diagnostics.Any())
                 {
                     Console.ForegroundColor = ConsoleColor.DarkRed;
-                    foreach (string diagnostic in syntaxTree.Diagnostics)
+                    foreach (string diagnostic in diagnostics)
                         Console.WriteLine(diagnostic);
                     Console.ResetColor();
                 }
@@ -44,8 +50,8 @@ namespace Stonylang_CSharp
                         Console.ResetColor();
                     }
 
-                    Evaluator.Evaluator evaluator = new(syntaxTree.Root);
-                    int result = evaluator.Evaluate();
+                    Evaluator.Evaluator evaluator = new(boundExpr);
+                    object result = evaluator.Evaluate();
                     Console.WriteLine(result);
                 }
             }

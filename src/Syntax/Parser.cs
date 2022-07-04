@@ -49,13 +49,12 @@ namespace Stonylang_CSharp.Parser
             return left;
         }
 
-        public ExprNode ParsePrimary()
+        public ExprNode ParsePrimary() => Current.Kind switch
         {
-            if (Current.Kind == TokenKind.LParen)
-                return new GroupingExpr(Advance(), ParseExpression(), Match(TokenKind.RParen));
-            Token number = Match(TokenKind.Number);
-            return new LiteralExpr(number);
-        }
+            TokenKind.LParen => new GroupingExpr(Advance(), ParseExpression(), Match(TokenKind.RParen)),
+            TokenKind.True or TokenKind.False => new LiteralExpr(Advance(), Peek(-1).Kind == TokenKind.True),
+            _ => new LiteralExpr(Match(TokenKind.Number)),
+        };
 
         private Token Peek(int offset = 0) => _position + offset >= _tokens.Count ? _tokens.Last() : _tokens[_position + offset];
         private Token Current => Peek();

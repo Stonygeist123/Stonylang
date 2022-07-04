@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 
 namespace Stonylang_CSharp.Lexer
 {
@@ -33,6 +29,12 @@ namespace Stonylang_CSharp.Lexer
                 int start = _position;
                 while (char.IsWhiteSpace(Current)) Advance();
                 return new Token(TokenKind.Whitespace, _source[start.._position], null, new(start, _position - start), _line);
+            }
+            if (char.IsLetter(Current))
+            {
+                int start = _position;
+                while (char.IsLetter(Current)) Advance();
+                return new Token(SyntaxFacts.SyntaxFacts.GetKeywordKind(_source[start.._position]), _source[start.._position], null, new(start, _position - start), _line);
             }
 
             switch (Current)

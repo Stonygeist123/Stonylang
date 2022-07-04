@@ -1,45 +1,49 @@
-﻿using Stonylang_CSharp.Lexer;
+﻿using Stonylang_CSharp.Binding;
+using Stonylang_CSharp.Lexer;
 using Stonylang_CSharp.Parser;
 using System;
 
 namespace Stonylang_CSharp.Evaluator
 {
-    public sealed class Evaluator
+    internal sealed class Evaluator
     {
-        private readonly ExprNode _root;
+        private readonly BoundExpr _root;
+        public Evaluator(BoundExpr root) => _root = root;
 
-        public Evaluator(ExprNode root) => _root = root;
-
-        public int Evaluate() => EvaluateExpression(_root);
-        private int EvaluateExpression(ExprNode node)
+        public object Evaluate() => EvaluateExpression(_root);
+        private object EvaluateExpression(BoundExpr node)
         {
-            if (node is LiteralExpr n) return (int)n.LiteralToken.Literal;
-            if (node is GroupingExpr g) return EvaluateExpression(g.Expr);
-            if (node is UnaryExpr u)
+            if (node is BoundLiteralExpr l) return l.Value;
+            // if (node is BoundGroupingExpr g) return EvaluateExpression(g.Expr);
+            if (node is BoundUnaryExpr u)
             {
-                int operand = EvaluateExpression(u.Operand);
-                return u.Op.Kind switch
+                object operand = EvaluateExpression(u.Operand);
+                if (operand is int @o)
                 {
-                    TokenKind.Plus => operand,
-                    TokenKind.Minus => -operand,
-                    TokenKind.Inv => ~operand,
-                    _ => throw new Exception($"Unexpected unary operator <{u.Op.Kind}>.")
-
-                };
+                    return u.OpKind switch
+                    {
+                        BoundUnaryOpKind.Identity => o,
+                        BoundUnaryOpKind.Negation => -o,
+                        _ => throw new Exception($"Unexpected unary operator <{u.OpKind}>.")
+                    };
+                }
             }
-            if (node is BinaryExpr b)
+            if (node is BoundBinaryExpr b)
             {
-                int left = EvaluateExpression(b.Left);
-                int right = EvaluateExpression(b.Right);
+                object left = EvaluateExpression(b.Left);
+                object right = EvaluateExpression(b.Right);
 
-                return b.Op.Kind switch
+                if (left is int @lO && right is int @rO)
                 {
-                    TokenKind.Plus => left + right,
-                    TokenKind.Minus => left - right,
-                    TokenKind.Star => left * right,
-                    TokenKind.Slash => left / right,
-                    _ => throw new Exception($"Unexpected binary operator <{b.Op.Kind}>.")
-                };
+                    return b.OpKind switch
+                    {
+                        BoundBinaryOpKind.Addition => lO + rO,
+                        BoundBinaryOpKind.Subtraction => lO - rO,
+                        BoundBinaryOpKind.Multiplication => lO * rO,
+                        BoundBinaryOpKind.Division => lO / rO,
+                        _ => throw new Exception($"Unexpected binary operator <{b.OpKind}>.")
+                    };
+                }
             }
 
             throw new Exception($"Unexpected expression operator {node.Kind}.");

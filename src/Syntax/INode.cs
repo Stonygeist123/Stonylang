@@ -17,9 +17,16 @@ namespace Stonylang_CSharp.Parser
 
     public sealed class LiteralExpr : ExprNode
     {
-        public LiteralExpr(Token literalToken) => LiteralToken = literalToken;
+        public LiteralExpr(Token literalToken) : this(literalToken, literalToken.Literal) { }
+        public LiteralExpr(Token literalToken, object value)
+        {
+            LiteralToken = literalToken;
+            Value = value;
+        }
+
         public override TokenKind Kind => TokenKind.LiteralExpr;
         public Token LiteralToken { get; }
+        public object Value { get; }
 
         public override IEnumerable<INode> GetChildren()
         {
@@ -50,9 +57,28 @@ namespace Stonylang_CSharp.Parser
         }
     }
 
+    public sealed class UnaryExpr : ExprNode
+    {
+        public UnaryExpr(Token op, ExprNode operand)
+        {
+            Operand = operand;
+            Op = op;
+        }
+
+        public override TokenKind Kind => TokenKind.UnaryExpr;
+        public Token Op { get; }
+        public ExprNode Operand { get; }
+
+        public override IEnumerable<INode> GetChildren()
+        {
+            yield return Op;
+            yield return Operand;
+        }
+    }
+
     public sealed class BinaryExpr : ExprNode
     {
-        public BinaryExpr(ExprNode left, INode op, ExprNode right)
+        public BinaryExpr(ExprNode left, Token op, ExprNode right)
         {
             Left = left;
             Op = op;
@@ -61,7 +87,7 @@ namespace Stonylang_CSharp.Parser
 
         public override TokenKind Kind => TokenKind.BinaryExpr;
         public ExprNode Left { get; }
-        public INode Op { get; }
+        public Token Op { get; }
         public ExprNode Right { get; }
 
         public override IEnumerable<INode> GetChildren()
@@ -69,25 +95,6 @@ namespace Stonylang_CSharp.Parser
             yield return Left;
             yield return Op;
             yield return Right;
-        }
-    }
-
-    public sealed class UnaryExpr : ExprNode
-    {
-        public UnaryExpr(INode op, ExprNode operand)
-        {
-            Operand = operand;
-            Op = op;
-        }
-
-        public override TokenKind Kind => TokenKind.UnaryExpr;
-        public INode Op { get; }
-        public ExprNode Operand { get; }
-
-        public override IEnumerable<INode> GetChildren()
-        {
-            yield return Op;
-            yield return Operand;
         }
     }
 }

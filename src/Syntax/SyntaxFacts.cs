@@ -1,4 +1,5 @@
 ﻿using Stonylang_CSharp.Lexer;
+using System;
 
 namespace Stonylang_CSharp.SyntaxFacts
 {
@@ -14,6 +15,16 @@ namespace Stonylang_CSharp.SyntaxFacts
             TokenKind.Star or TokenKind.Slash => 2,
             TokenKind.Plus or TokenKind.Minus => 1,
             _ => 0
+        };
+
+        internal static TokenKind GetKeywordKind(string text) => text switch
+        {
+            "true" => TokenKind.True,
+            "false" => TokenKind.False,
+            "var" => TokenKind.Var,
+            "mut" => TokenKind.Mut,
+            "fn" => TokenKind.Fn,
+            _ => TokenKind.Identifier
         };
     }
 }
