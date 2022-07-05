@@ -5,33 +5,33 @@ namespace Stonylang_CSharp.SyntaxFacts
 {
     internal static class SyntaxFacts
     {
-        public static int GetUnaryOpPrecedence(this TokenKind kind) => kind switch
+        public static int GetUnaryOpPrecedence(this SyntaxKind kind) => kind switch
         {
-            TokenKind.Plus or TokenKind.Minus or TokenKind.Inv or TokenKind.Not => 10,
+            SyntaxKind.Plus or SyntaxKind.Minus or SyntaxKind.Inv or SyntaxKind.Not => 10,
             _ => 0
         };
-        public static int GetBinaryOpPrecedence(this TokenKind kind) => kind switch
+        public static int GetBinaryOpPrecedence(this SyntaxKind kind) => kind switch
         {
-            TokenKind.Power => 9,
-            TokenKind.Star or TokenKind.Slash => 8,
-            TokenKind.Plus or TokenKind.Minus => 7,
-            TokenKind.EqEq or TokenKind.NotEq => 6,
-            TokenKind.And => 5,
-            TokenKind.Xor => 4,
-            TokenKind.Or => 3,
-            TokenKind.LogicalAnd => 2,
-            TokenKind.LogicalOr => 1,
+            SyntaxKind.Power => 9,
+            SyntaxKind.Star or SyntaxKind.Slash => 8,
+            SyntaxKind.Plus or SyntaxKind.Minus => 7,
+            SyntaxKind.EqEq or SyntaxKind.NotEq => 6,
+            SyntaxKind.And => 5,
+            SyntaxKind.Xor => 4,
+            SyntaxKind.Or => 3,
+            SyntaxKind.LogicalAnd => 2,
+            SyntaxKind.LogicalOr => 1,
             _ => 0
         };
 
-        internal static TokenKind GetKeywordKind(string text) => text switch
+        internal static SyntaxKind GetKeywordKind(string text) => text switch
         {
-            "true" => TokenKind.True,
-            "false" => TokenKind.False,
-            "var" => TokenKind.Var,
-            "mut" => TokenKind.Mut,
-            "fn" => TokenKind.Fn,
-            _ => TokenKind.Identifier
+            "true" => SyntaxKind.True,
+            "false" => SyntaxKind.False,
+            "var" => SyntaxKind.Var,
+            "mut" => SyntaxKind.Mut,
+            "fn" => SyntaxKind.Fn,
+            _ => SyntaxKind.Identifier
         };
     }
 }

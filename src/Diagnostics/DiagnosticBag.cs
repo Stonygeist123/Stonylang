@@ -2,7 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 
-namespace Stonylang_CSharp.Diagnostics
+namespace Stonylang_CSharp.Utility
 {
     public sealed class DiagnosticBag : IEnumerable<Diagnostic>
     {
@@ -16,7 +16,7 @@ namespace Stonylang_CSharp.Diagnostics
                 LogLevel.Info => "Info ",
                 _ => "Unknown Exception"
             };
-            string msg1 = $"[{levelS} {line}:{span.Start + 1}-{span.End + 1}] ", message = msg1 + source.Split('\n')[line - 1] + "\n";
+            string msg1 = $"[{levelS} {line}:{span.Start + 1}{(span.End == (span.Start + 1) ? "" : $"-{span.End}")}] ", message = msg1 + source.Split('\n')[line - 1] + "\n";
             string spacing = new string(' ', span.Start + msg1.Length);
             message += spacing + new string('^', span.Length) + '\n';
             message += spacing + $"{errorType}: {msg}";

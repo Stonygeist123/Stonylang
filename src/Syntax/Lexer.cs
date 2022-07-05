@@ -1,4 +1,4 @@
-﻿using Stonylang_CSharp.Diagnostics;
+﻿using Stonylang_CSharp.Utility;
 using System.Collections.Generic;
 
 namespace Stonylang_CSharp.Lexer
@@ -21,18 +21,18 @@ namespace Stonylang_CSharp.Lexer
             while (char.IsDigit(Current)) Advance();
             if (!int.TryParse(_source[start.._position], out int v))
                 _diagnostics.Report(_source, new(start, _position - start), _line, $"Invalid integer literal \"{ _source[start.._position]}\".", "SyntaxException", LogLevel.Error);
-            return new Token(TokenKind.Number, _source[start.._position], v, new(start, _position - start), _line);
+            return new Token(SyntaxKind.Number, _source[start.._position], v, new(start, _position - start), _line);
         }
 
         public Token Lex()
         {
-            if (_position >= _source.Length) return new Token(TokenKind.EOF, "\0", null, new(_position, 0), _line);
+            if (_position >= _source.Length) return new Token(SyntaxKind.EOF, "\0", null, new(_position, 0), _line);
             if (char.IsDigit(Current)) return Number();
             if (char.IsWhiteSpace(Current))
             {
                 int start = _position;
                 while (char.IsWhiteSpace(Current)) Advance();
-                return new Token(TokenKind.Whitespace, _source[start.._position], null, new(start, _position - start), _line);
+                return new Token(SyntaxKind.Whitespace, _source[start.._position], null, new(start, _position - start), _line);
             }
             if (char.IsLetter(Current))
             {
@@ -44,54 +44,54 @@ namespace Stonylang_CSharp.Lexer
             switch (Current)
             {
                 case '+':
-                    return new Token(TokenKind.Plus, "+", null, new(_position++, 1), _line);
+                    return new Token(SyntaxKind.Plus, "+", null, new(_position++, 1), _line);
                 case '-':
-                    return new Token(TokenKind.Minus, "-", null, new(_position++, 1), _line);
+                    return new Token(SyntaxKind.Minus, "-", null, new(_position++, 1), _line);
                 case '*':
                     if (Peek(1) == '*')
                     {
                         if (Peek(1) == '=')
-                            return new Token(TokenKind.PowerEq, "**=", null, new(_position += 2, 2), _line);
-                        return new Token(TokenKind.Power, "**", null, new(_position += 2, 2), _line);
+                            return new Token(SyntaxKind.PowerEq, "**=", null, new(_position += 2, 2), _line);
+                        return new Token(SyntaxKind.Power, "**", null, new(_position += 2, 2), _line);
                     }
                     if (Peek(1) == '=')
-                        return new Token(TokenKind.StarEq, "*=", null, new(_position += 2, 2), _line);
-                    return new Token(TokenKind.Star, "*", null, new(_position++, 1), _line);
+                        return new Token(SyntaxKind.StarEq, "*=", null, new(_position += 2, 2), _line);
+                    return new Token(SyntaxKind.Star, "*", null, new(_position++, 1), _line);
                 case '/':
-                    return new Token(TokenKind.Slash, "/", null, new(_position++, 1), _line);
+                    return new Token(SyntaxKind.Slash, "/", null, new(_position++, 1), _line);
                 case '(':
-                    return new Token(TokenKind.LParen, "(", null, new(_position++, 1), _line);
+                    return new Token(SyntaxKind.LParen, "(", null, new(_position++, 1), _line);
                 case ')':
-                    return new Token(TokenKind.RParen, ")", null, new(_position++, 1), _line);
+                    return new Token(SyntaxKind.RParen, ")", null, new(_position++, 1), _line);
                 case '&':
                     if (Peek(1) == '&')
-                        return new Token(TokenKind.LogicalAnd, "&&", null, new(_position += 2, 2), _line);
+                        return new Token(SyntaxKind.LogicalAnd, "&&", null, new(_position += 2, 2), _line);
                     else if (Peek(1) == '=')
-                        return new Token(TokenKind.AndEq, "&=", null, new(_position += 2, 2), _line);
-                    return new Token(TokenKind.And, "&", null, new(_position++, 1), _line);
+                        return new Token(SyntaxKind.AndEq, "&=", null, new(_position += 2, 2), _line);
+                    return new Token(SyntaxKind.And, "&", null, new(_position++, 1), _line);
                 case '|':
                     if (Peek(1) == '|')
-                        return new Token(TokenKind.LogicalOr, "||", null, new(_position += 2, 2), _line);
+                        return new Token(SyntaxKind.LogicalOr, "||", null, new(_position += 2, 2), _line);
                     else if (Peek(1) == '=')
-                        return new Token(TokenKind.OrEq, "|=", null, new(_position += 2, 2), _line);
-                    return new Token(TokenKind.Or, "|", null, new(_position++, 1), _line);
+                        return new Token(SyntaxKind.OrEq, "|=", null, new(_position += 2, 2), _line);
+                    return new Token(SyntaxKind.Or, "|", null, new(_position++, 1), _line);
                 case '=':
                     if (Peek(1) == '=')
-                        return new Token(TokenKind.EqEq, "==", null, new(_position += 2, 2), _line);
-                    return new Token(TokenKind.Equals, "=", null, new(_position++, 1), _line);
+                        return new Token(SyntaxKind.EqEq, "==", null, new(_position += 2, 2), _line);
+                    return new Token(SyntaxKind.Equals, "=", null, new(_position++, 1), _line);
                 case '!':
                     if (Peek(1) == '=')
-                        return new Token(TokenKind.NotEq, "!=", null, new(_position += 2, 2), _line);
-                    return new Token(TokenKind.Not, "~", null, new(_position++, 1), _line);
+                        return new Token(SyntaxKind.NotEq, "!=", null, new(_position += 2, 2), _line);
+                    return new Token(SyntaxKind.Not, "~", null, new(_position++, 1), _line);
                 case '^':
                     if (Peek(1) == '=')
-                        return new Token(TokenKind.XorEq, "^=", null, new(_position += 2, 2), _line);
-                    return new Token(TokenKind.Xor, "^", null, new(_position++, 1), _line);
+                        return new Token(SyntaxKind.XorEq, "^=", null, new(_position += 2, 2), _line);
+                    return new Token(SyntaxKind.Xor, "^", null, new(_position++, 1), _line);
                 case '~':
-                    return new Token(TokenKind.Inv, "~", null, new(_position++, 1), _line);
+                    return new Token(SyntaxKind.Inv, "~", null, new(_position++, 1), _line);
                 default:
                     _diagnostics.Report(_source, new(_position, 1), _line, $"Unexpected character '{Current}'.", "SyntaxException", LogLevel.Error);
-                    return new Token(TokenKind.Bad, "", null, new(_position++, 1), _line);
+                    return new Token(SyntaxKind.Bad, "", null, new(_position++, 1), _line);
             };
         }
 

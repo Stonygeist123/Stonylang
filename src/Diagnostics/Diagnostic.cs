@@ -1,4 +1,4 @@
-﻿namespace Stonylang_CSharp.Diagnostics
+﻿namespace Stonylang_CSharp.Utility
 {
     public sealed class Diagnostic
     {

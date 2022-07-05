@@ -5,13 +5,13 @@ namespace Stonylang_CSharp.Parser
 {
     public interface INode
     {
-        public abstract TokenKind Kind { get; }
+        public abstract SyntaxKind Kind { get; }
         public abstract IEnumerable<INode> GetChildren();
     }
 
     public abstract class ExprNode : INode
     {
-        public abstract TokenKind Kind { get; }
+        public abstract SyntaxKind Kind { get; }
         public abstract IEnumerable<INode> GetChildren();
     }
 
@@ -24,7 +24,7 @@ namespace Stonylang_CSharp.Parser
             Value = value;
         }
 
-        public override TokenKind Kind => TokenKind.LiteralExpr;
+        public override SyntaxKind Kind => SyntaxKind.LiteralExpr;
         public Token LiteralToken { get; }
         public object Value { get; }
 
@@ -34,29 +34,6 @@ namespace Stonylang_CSharp.Parser
         }
     }
 
-    /* public sealed class GroupingExpr : ExprNode
-    {
-        public GroupingExpr(Token lParen, ExprNode expr, Token rParen)
-        {
-            LParen = lParen;
-            Expr = expr;
-            RParen = rParen;
-        }
-
-        public override TokenKind Kind => TokenKind.GroupingExpr;
-
-        public Token LParen { get; }
-        public ExprNode Expr { get; }
-        public Token RParen { get; }
-
-        public override IEnumerable<INode> GetChildren()
-        {
-            yield return LParen;
-            yield return Expr;
-            yield return RParen;
-        }
-    } */
-
     public sealed class UnaryExpr : ExprNode
     {
         public UnaryExpr(Token op, ExprNode operand)
@@ -65,7 +42,7 @@ namespace Stonylang_CSharp.Parser
             Op = op;
         }
 
-        public override TokenKind Kind => TokenKind.UnaryExpr;
+        public override SyntaxKind Kind => SyntaxKind.UnaryExpr;
         public Token Op { get; }
         public ExprNode Operand { get; }
 
@@ -85,7 +62,7 @@ namespace Stonylang_CSharp.Parser
             Right = right;
         }
 
-        public override TokenKind Kind => TokenKind.BinaryExpr;
+        public override SyntaxKind Kind => SyntaxKind.BinaryExpr;
         public ExprNode Left { get; }
         public Token Op { get; }
         public ExprNode Right { get; }
@@ -95,6 +72,40 @@ namespace Stonylang_CSharp.Parser
             yield return Left;
             yield return Op;
             yield return Right;
+        }
+    }
+
+    public sealed class NameExpr : ExprNode
+    {
+        public NameExpr(Token name) => Name = name;
+        public override SyntaxKind Kind => SyntaxKind.NameExpr;
+        public Token Name { get; }
+
+        public override IEnumerable<INode> GetChildren()
+        {
+            yield return Name;
+        }
+    }
+
+    public sealed class AssignmentExpr : ExprNode
+    {
+        public AssignmentExpr(Token name, Token equalsToken, ExprNode value)
+        {
+            Name = name;
+            EqualsToken = equalsToken;
+            Value = value;
+        }
+
+        public override SyntaxKind Kind => SyntaxKind.AssignmentExpr;
+        public Token Name { get; }
+        public Token EqualsToken { get; }
+        public ExprNode Value { get; }
+
+        public override IEnumerable<INode> GetChildren()
+        {
+            yield return Name;
+            yield return EqualsToken;
+            yield return Value;
         }
     }
 }

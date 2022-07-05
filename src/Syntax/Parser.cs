@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using Stonylang_CSharp.Diagnostics;
+using Stonylang_CSharp.Utility;
 using Stonylang_CSharp.Lexer;
 using Stonylang_CSharp.SyntaxFacts;
 
@@ -21,8 +21,8 @@ namespace Stonylang_CSharp.Parser
             do
             {
                 token = lexer.Lex();
-                if (token.Kind != TokenKind.Whitespace && token.Kind != TokenKind.Bad) _tokens.Add(token);
-            } while (token.Kind != TokenKind.EOF);
+                if (token.Kind != SyntaxKind.Whitespace && token.Kind != SyntaxKind.Bad) _tokens.Add(token);
+            } while (token.Kind != SyntaxKind.EOF);
 
             _diagnostics.AddRange(lexer.Diagnostics);
             _source = source;
@@ -30,16 +30,33 @@ namespace Stonylang_CSharp.Parser
         public SyntaxTree.SyntaxTree Parse()
         {
             ExprNode expr = ParseExpression();
-            Token eofToken = Match(TokenKind.EOF);
+            Token eofToken = Match(SyntaxKind.EOF);
             return new SyntaxTree.SyntaxTree(_diagnostics, expr, eofToken);
         }
 
-        private ExprNode ParseExpression(int parentPrecedence = 0)
+        private ExprNode ParseExpression()
+        {
+            return ParseAssignmentExpr();
+        }
+
+        private ExprNode ParseAssignmentExpr()
+        {
+            if (Current.Kind == SyntaxKind.Identifier && Peek(1).Kind == SyntaxKind.Equals)
+            {
+                Token name = Advance();
+                Token op = Advance();
+                ExprNode right = ParseAssignmentExpr();
+                return new AssignmentExpr(name, op, right);
+            }
+
+            return ParseBinaryExpression();
+        }
+        private ExprNode ParseBinaryExpression(int parentPrecedence = 0)
         {
             ExprNode left;
             int unOpPrecedence = Current.Kind.GetUnaryOpPrecedence();
             if (unOpPrecedence != 0 && unOpPrecedence >= parentPrecedence)
-                left = new UnaryExpr(Advance(), ParseExpression(unOpPrecedence));
+                left = new UnaryExpr(Advance(), ParseBinaryExpression(unOpPrecedence));
             else
                 left = ParsePrimary();
 
@@ -47,7 +64,7 @@ namespace Stonylang_CSharp.Parser
             {
                 int precende = Current.Kind.GetBinaryOpPrecedence();
                 if (precende == 0 || precende <= parentPrecedence) break;
-                left = new BinaryExpr(left, Advance(), ParseExpression(precende));
+                left = new BinaryExpr(left, Advance(), ParseBinaryExpression(precende));
             }
 
             return left;
@@ -57,15 +74,20 @@ namespace Stonylang_CSharp.Parser
         {
             switch (Current.Kind)
             {
-                case TokenKind.LParen:
-                    Advance();
-                    ExprNode expr = ParseExpression();
-                    Match(TokenKind.RParen);
-                    return expr;
-                case TokenKind.True:
-                case TokenKind.False:
-                    return new LiteralExpr(Advance(), Peek(-1).Kind == TokenKind.True);
-                default: return new LiteralExpr(Match(TokenKind.Number));
+                case SyntaxKind.LParen:
+                    {
+                        Advance();
+                        ExprNode expr = ParseExpression();
+                        Match(SyntaxKind.RParen);
+                        return expr;
+                    }
+                case SyntaxKind.Identifier:
+                    return new NameExpr(Advance());
+                case SyntaxKind.True:
+                case SyntaxKind.False:
+                    return new LiteralExpr(Advance(), Peek(-1).Kind == SyntaxKind.True);
+                default:
+                    return new LiteralExpr(Match(SyntaxKind.Number));
             }
         }
 
@@ -77,7 +99,7 @@ namespace Stonylang_CSharp.Parser
             ++_position;
             return c;
         }
-        private Token Match(TokenKind kind)
+        private Token Match(SyntaxKind kind)
         {
             if (Current.Kind == kind) return Advance();
             _diagnostics.Report(_source, Current.Span, Current.Line, $"Unexpected \"{Current.Kind}\", expected \"{kind}\".", "SyntaxException", LogLevel.Error);

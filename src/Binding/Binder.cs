@@ -1,4 +1,4 @@
-﻿using Stonylang_CSharp.Diagnostics;
+﻿using Stonylang_CSharp.Utility;
 using Stonylang_CSharp.Lexer;
 using Stonylang_CSharp.Parser;
 using System;
@@ -8,9 +8,9 @@ namespace Stonylang_CSharp.Binding
 {
     internal sealed class BoundUnaryOperator
     {
-        private BoundUnaryOperator(TokenKind kind, BoundUnaryOpKind opKind, Type operandType)
+        private BoundUnaryOperator(SyntaxKind kind, BoundUnaryOpKind opKind, Type operandType)
             : this(kind, opKind, operandType, operandType) { }
-        private BoundUnaryOperator(TokenKind kind, BoundUnaryOpKind opKind, Type operandType, Type resultType)
+        private BoundUnaryOperator(SyntaxKind kind, BoundUnaryOpKind opKind, Type operandType, Type resultType)
         {
             Kind = kind;
             OpKind = opKind;
@@ -18,20 +18,20 @@ namespace Stonylang_CSharp.Binding
             ResultType = resultType;
         }
 
-        public TokenKind Kind { get; }
+        public SyntaxKind Kind { get; }
         public BoundUnaryOpKind OpKind { get; }
         public Type OperandType { get; }
         public Type ResultType { get; }
 
         private static readonly BoundUnaryOperator[] _operators =
         {
-            new(TokenKind.Not, BoundUnaryOpKind.LogicalNegation, typeof(bool)),
-            new(TokenKind.Plus, BoundUnaryOpKind.Identity, typeof(int)),
-            new(TokenKind.Minus, BoundUnaryOpKind.Negation, typeof(int)),
-            new(TokenKind.Inv, BoundUnaryOpKind.Inv, typeof(int))
+            new(SyntaxKind.Not, BoundUnaryOpKind.LogicalNegation, typeof(bool)),
+            new(SyntaxKind.Plus, BoundUnaryOpKind.Identity, typeof(int)),
+            new(SyntaxKind.Minus, BoundUnaryOpKind.Negation, typeof(int)),
+            new(SyntaxKind.Inv, BoundUnaryOpKind.Inv, typeof(int))
         };
 
-        public static BoundUnaryOperator Bind(TokenKind kind, Type operandType)
+        public static BoundUnaryOperator Bind(SyntaxKind kind, Type operandType)
         {
             foreach (var op in _operators)
                 if (op.Kind == kind && op.OperandType == operandType) return op;
@@ -41,11 +41,11 @@ namespace Stonylang_CSharp.Binding
 
     internal sealed class BoundBinaryOperator
     {
-        private BoundBinaryOperator(TokenKind kind, BoundBinaryOpKind opKind, Type type)
+        private BoundBinaryOperator(SyntaxKind kind, BoundBinaryOpKind opKind, Type type)
             : this(kind, opKind, type, type, type) { }
-        private BoundBinaryOperator(TokenKind kind, BoundBinaryOpKind opKind, Type operandType, Type type)
+        private BoundBinaryOperator(SyntaxKind kind, BoundBinaryOpKind opKind, Type operandType, Type type)
             : this(kind, opKind, operandType, operandType, type) { }
-        private BoundBinaryOperator(TokenKind kind, BoundBinaryOpKind opKind, Type leftType, Type rightType, Type resultType)
+        private BoundBinaryOperator(SyntaxKind kind, BoundBinaryOpKind opKind, Type leftType, Type rightType, Type resultType)
         {
             Kind = kind;
             OpKind = opKind;
@@ -54,7 +54,7 @@ namespace Stonylang_CSharp.Binding
             ResultType = resultType;
         }
 
-        public TokenKind Kind { get; }
+        public SyntaxKind Kind { get; }
         public BoundBinaryOpKind OpKind { get; }
         public Type LeftType { get; }
         public Type RightType { get; }
@@ -63,29 +63,29 @@ namespace Stonylang_CSharp.Binding
         private static readonly BoundBinaryOperator[] _operators =
         {
             // int
-            new(TokenKind.Plus, BoundBinaryOpKind.Addition, typeof(int)),
-            new(TokenKind.Minus, BoundBinaryOpKind.Subtraction, typeof(int)),
-            new(TokenKind.Star, BoundBinaryOpKind.Multiplication, typeof(int)),
-            new(TokenKind.Slash, BoundBinaryOpKind.Division, typeof(int)),
-            new(TokenKind.Power, BoundBinaryOpKind.Power, typeof(int)),
-            new(TokenKind.Or, BoundBinaryOpKind.Or, typeof(int)),
-            new(TokenKind.And, BoundBinaryOpKind.And, typeof(int)),
-            new(TokenKind.Xor, BoundBinaryOpKind.Xor, typeof(int)),
+            new(SyntaxKind.Plus, BoundBinaryOpKind.Addition, typeof(int)),
+            new(SyntaxKind.Minus, BoundBinaryOpKind.Subtraction, typeof(int)),
+            new(SyntaxKind.Star, BoundBinaryOpKind.Multiplication, typeof(int)),
+            new(SyntaxKind.Slash, BoundBinaryOpKind.Division, typeof(int)),
+            new(SyntaxKind.Power, BoundBinaryOpKind.Power, typeof(int)),
+            new(SyntaxKind.Or, BoundBinaryOpKind.Or, typeof(int)),
+            new(SyntaxKind.And, BoundBinaryOpKind.And, typeof(int)),
+            new(SyntaxKind.Xor, BoundBinaryOpKind.Xor, typeof(int)),
 
-            new(TokenKind.EqEq, BoundBinaryOpKind.LogicalEq, typeof(int), typeof(bool)),
-            new(TokenKind.NotEq, BoundBinaryOpKind.LogicalNotEq, typeof(int), typeof(bool)),
+            new(SyntaxKind.EqEq, BoundBinaryOpKind.LogicalEq, typeof(int), typeof(bool)),
+            new(SyntaxKind.NotEq, BoundBinaryOpKind.LogicalNotEq, typeof(int), typeof(bool)),
 
             // bool
-            new(TokenKind.LogicalAnd, BoundBinaryOpKind.LogicalAnd, typeof(bool)),
-            new(TokenKind.LogicalOr, BoundBinaryOpKind.LogicalOr, typeof(bool)),
-            new(TokenKind.EqEq, BoundBinaryOpKind.LogicalEq, typeof(bool)),
-            new(TokenKind.NotEq, BoundBinaryOpKind.LogicalNotEq, typeof(bool)),
-            new(TokenKind.Or, BoundBinaryOpKind.Or, typeof(bool)),
-            new(TokenKind.And, BoundBinaryOpKind.And, typeof(bool)),
-            new(TokenKind.Xor, BoundBinaryOpKind.Xor, typeof(bool))
+            new(SyntaxKind.LogicalAnd, BoundBinaryOpKind.LogicalAnd, typeof(bool)),
+            new(SyntaxKind.LogicalOr, BoundBinaryOpKind.LogicalOr, typeof(bool)),
+            new(SyntaxKind.EqEq, BoundBinaryOpKind.LogicalEq, typeof(bool)),
+            new(SyntaxKind.NotEq, BoundBinaryOpKind.LogicalNotEq, typeof(bool)),
+            new(SyntaxKind.Or, BoundBinaryOpKind.Or, typeof(bool)),
+            new(SyntaxKind.And, BoundBinaryOpKind.And, typeof(bool)),
+            new(SyntaxKind.Xor, BoundBinaryOpKind.Xor, typeof(bool))
         };
 
-        public static BoundBinaryOperator Bind(TokenKind kind, Type leftType, Type rightType)
+        public static BoundBinaryOperator Bind(SyntaxKind kind, Type leftType, Type rightType)
         {
             foreach (var op in _operators)
                 if (op.Kind == kind && op.LeftType == leftType && op.RightType == rightType) return op;
@@ -96,16 +96,23 @@ namespace Stonylang_CSharp.Binding
     internal sealed class Binder
     {
         private readonly string _source;
+        private readonly Dictionary<string, VariableSymbol> _symbolTable;
         private readonly DiagnosticBag _diagnostics = new();
         public DiagnosticBag Diagnostics => _diagnostics;
-        public Binder(string source) => _source = source;
+        public Binder(string source, Dictionary<string, VariableSymbol> symbolTable)
+        {
+            _source = source;
+            _symbolTable = symbolTable;
+        }
 
         public BoundExpr BindExpr(ExprNode expr) => expr.Kind switch
         {
-            TokenKind.LiteralExpr => BindLiteralExpr((LiteralExpr)expr),
-            TokenKind.UnaryExpr => BindUnaryExpr((UnaryExpr)expr),
-            TokenKind.BinaryExpr => BindBinaryExpr((BinaryExpr)expr),
-            _ => throw new Exception($"Unexpected syntax \"{expr.Kind}\""),
+            SyntaxKind.LiteralExpr => BindLiteralExpr((LiteralExpr)expr),
+            SyntaxKind.UnaryExpr => BindUnaryExpr((UnaryExpr)expr),
+            SyntaxKind.BinaryExpr => BindBinaryExpr((BinaryExpr)expr),
+            SyntaxKind.NameExpr => BindNameExpr((NameExpr)expr),
+            SyntaxKind.AssignmentExpr => BindAssignmentExpr((AssignmentExpr)expr),
+            _ => throw new Exception($"Unexpected syntax \"{expr.Kind}\"."),
         };
 
         private static BoundExpr BindLiteralExpr(LiteralExpr expr) => new BoundLiteralExpr(expr.Value ?? 0);
@@ -119,6 +126,7 @@ namespace Stonylang_CSharp.Binding
             _diagnostics.Report(_source, expr.Op.Span, expr.Op.Line, $"Unary operator '{expr.Op.Lexeme}' is not defined for type \"{boundOperand.Type}\".", "TypeException", LogLevel.Error);
             return boundOperand;
         }
+
         private BoundExpr BindBinaryExpr(BinaryExpr expr)
         {
             BoundExpr boundLeft = BindExpr(expr.Left);
@@ -129,6 +137,30 @@ namespace Stonylang_CSharp.Binding
 
             _diagnostics.Report(_source, expr.Op.Span, expr.Op.Line, $"Binary operator '{expr.Op.Lexeme}' is not defined for types \"{boundLeft.Type}\" and \"{boundRight.Type}\".", "TypeException", LogLevel.Error);
             return boundLeft;
+        }
+
+        private BoundExpr BindNameExpr(NameExpr expr)
+        {
+            string name = expr.Name.Lexeme;
+            if (_symbolTable.TryGetValue(name, out var value)) return new BoundVariableExpr(value);
+            _diagnostics.Report(_source, expr.Name.Span, expr.Name.Line, $"Could not find \"{name}\" in the current context.", "KeyNotFoundException", LogLevel.Error);
+            return new BoundLiteralExpr(0);
+        }
+
+        private BoundExpr BindAssignmentExpr(AssignmentExpr expr)
+        {
+            string name = expr.Name.Lexeme;
+            BoundExpr value = BindExpr(expr.Value);
+            if (_symbolTable.TryGetValue(name, out var savedValue))
+            {
+                if (!savedValue.Type.Equals(value.Type))
+                {
+                    _diagnostics.Report(_source, expr.Name.Span, expr.Name.Line, $"Cannot assign a type of \"{value.Type}\" to \"{name}\", which has a type of \"{savedValue.Type}\".", "TypeException", LogLevel.Error);
+                    return new BoundLiteralExpr(0);
+                }
+                return new BoundAssignmentExpr(new(name, value.Type, null, (TextSpan)savedValue.Span), value);
+            }
+            return new BoundAssignmentExpr(new(name, value.Type, null, expr.EqualsToken.Span), value);
         }
     }
 }

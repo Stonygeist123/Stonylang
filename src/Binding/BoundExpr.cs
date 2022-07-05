@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Stonylang_CSharp.Utility;
+using System;
 
 namespace Stonylang_CSharp.Binding
 {
@@ -6,7 +7,9 @@ namespace Stonylang_CSharp.Binding
     {
         LiteralExpr,
         UnaryExpr,
-        BinaryExpr
+        BinaryExpr,
+        VariableExpr,
+        AssignmentExpr
     }
 
     internal enum BoundUnaryOpKind
@@ -80,5 +83,28 @@ namespace Stonylang_CSharp.Binding
         public BoundExpr Left { get; }
         public BoundBinaryOperator Op { get; }
         public BoundExpr Right { get; }
+    }
+
+    internal sealed class BoundVariableExpr : BoundExpr
+    {
+        public BoundVariableExpr(VariableSymbol variable) => Variable = variable;
+
+        public VariableSymbol Variable { get; }
+        public override Type Type => Variable.Type;
+        public override BoundNodeKind Kind => BoundNodeKind.VariableExpr;
+    }
+
+    internal sealed class BoundAssignmentExpr : BoundExpr
+    {
+        public BoundAssignmentExpr(VariableSymbol variable, BoundExpr value)
+        {
+            Variable = variable;
+            Value = value;
+        }
+
+        public VariableSymbol Variable { get; }
+        public BoundExpr Value { get; }
+        public override Type Type => Variable.Type;
+        public override BoundNodeKind Kind => BoundNodeKind.AssignmentExpr;
     }
 }

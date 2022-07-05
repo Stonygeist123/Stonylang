@@ -1,13 +1,12 @@
 ﻿using Stonylang_CSharp.Parser;
-using System;
 using System.Linq;
 using System.Collections.Generic;
-using Stonylang_CSharp.Diagnostics;
+using Stonylang_CSharp.Utility;
 
 namespace Stonylang_CSharp.Lexer
 {
 
-    public enum TokenKind
+    public enum SyntaxKind
     {
         // Arithmetic
         Plus, Minus, Star, Slash, Mod, Power, Increment, Decrement,
@@ -47,12 +46,13 @@ namespace Stonylang_CSharp.Lexer
 
         // Exprs
         LiteralExpr, GroupingExpr, UnaryExpr, BinaryExpr,
+        NameExpr, AssignmentExpr,
 
-        Whitespace, Bad, EOF
+        Whitespace, Bad, EOF,
     }
     public struct Token : INode
     {
-        public Token(TokenKind _kind, string _lexeme, object _literal, TextSpan _span, int _line)
+        public Token(SyntaxKind _kind, string _lexeme, object _literal, TextSpan _span, int _line)
         {
             Kind = _kind;
             Lexeme = _lexeme;
@@ -61,7 +61,7 @@ namespace Stonylang_CSharp.Lexer
             Line = _line;
         }
 
-        public TokenKind Kind { get; }
+        public SyntaxKind Kind { get; }
         public string Lexeme { get; }
         public object Literal { get; }
         public TextSpan Span { get; }

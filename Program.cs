@@ -1,15 +1,17 @@
-﻿using Stonylang_CSharp.Diagnostics;
+﻿using Stonylang_CSharp.Utility;
 using Stonylang_CSharp.Evaluator;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace Stonylang_CSharp
 {
     internal static class Program
     {
+        static readonly Dictionary<string, VariableSymbol> symbolTable = new();
+        static bool showTree = false;
         static void Main()
         {
-            bool showTree = false;
             while (true)
             {
                 Console.Write("> ");
@@ -30,7 +32,7 @@ namespace Stonylang_CSharp
 
                 SyntaxTree.SyntaxTree syntaxTree = SyntaxTree.SyntaxTree.Parse(input);
                 Compilation compilation = new(syntaxTree, input);
-                EvaluationResult result = compilation.Evaluate();
+                EvaluationResult result = compilation.Evaluate(symbolTable);
 
                 DiagnosticBag diagnostics = result.Diagnostics;
 

@@ -1,6 +1,7 @@
 ﻿using Stonylang_CSharp.Binding;
-using Stonylang_CSharp.Diagnostics;
+using Stonylang_CSharp.Utility;
 using System;
+using System.Collections.Generic;
 
 namespace Stonylang_CSharp.Evaluator
 {
@@ -19,14 +20,28 @@ namespace Stonylang_CSharp.Evaluator
     internal sealed class Evaluator
     {
         private readonly BoundExpr _root;
-        // private readonly string _source;
+        private readonly Dictionary<string, VariableSymbol> _symbolTable;
 
-        public Evaluator(BoundExpr root) => _root = root;
+        public Evaluator(BoundExpr root, Dictionary<string, VariableSymbol> symbolTable)
+        {
+            _root = root;
+            _symbolTable = symbolTable;
+        }
 
         public object Evaluate() => EvaluateExpression(_root);
         private object EvaluateExpression(BoundExpr node)
         {
             if (node is BoundLiteralExpr l) return l.Value;
+            if (node is BoundVariableExpr v) return _symbolTable[v.Variable.Name].Value;
+            if (node is BoundAssignmentExpr a)
+            {
+                object value = EvaluateExpression(a.Value);
+                if (_symbolTable.ContainsKey(a.Variable.Name))
+                    _symbolTable[a.Variable.Name] = new(a.Variable.Name, _symbolTable[a.Variable.Name].Type, value, _symbolTable[a.Variable.Name].Span);
+                else _symbolTable.Add(a.Variable.Name, new(a.Variable.Name, a.Type, value, a.Variable.Span));
+                return value;
+            }
+
             if (node is BoundUnaryExpr u)
             {
                 object operand = EvaluateExpression(u.Operand);

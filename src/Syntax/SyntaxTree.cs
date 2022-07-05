@@ -1,4 +1,4 @@
-﻿using Stonylang_CSharp.Diagnostics;
+﻿using Stonylang_CSharp.Utility;
 using Stonylang_CSharp.Lexer;
 using Stonylang_CSharp.Parser;
 using System.Collections.Generic;
