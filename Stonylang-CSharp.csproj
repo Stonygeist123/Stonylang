@@ -4,6 +4,11 @@
     <OutputType>Exe</OutputType>
     <TargetFramework>net5.0</TargetFramework>
     <RootNamespace>Stonylang_CSharp</RootNamespace>
+    <StartupObject>Stonylang_CSharp.Program</StartupObject>
   </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="xunit.extensibility.core" Version="2.4.1" />
+  </ItemGroup>
 
 </Project>

@@ -1,15 +1,14 @@
 ﻿using Stonylang_CSharp.Parser;
-using System.Linq;
-using System.Collections.Generic;
 using Stonylang_CSharp.Utility;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Stonylang_CSharp.Lexer
 {
-
     public enum SyntaxKind
     {
         // Arithmetic
-        Plus, Minus, Star, Slash, Mod, Power, Increment, Decrement,
+        Plus, Minus, Star, Slash, Power, Mod, Increment, Decrement,
 
         // Relational
         EqEq, NotEq, Greater, GreaterEq, Less, LessEq,
@@ -36,9 +35,8 @@ namespace Stonylang_CSharp.Lexer
 
         // Keywords
         Fn, Class, If, Else, Switch, Case, Default,
-        Var, Mut, Break, Continue, True, False, Null,
-        Return, While, Do, For, ForEach, Async, Await,
-        GoTo,
+        Var, Mut, Break, Continue, True, False, Return,
+        While, Do, For, ForEach, Async, Await, GoTo,
 
         // Others
         Semicolon, Comma, LParen, RParen, LBrace, RBrace,
@@ -50,7 +48,7 @@ namespace Stonylang_CSharp.Lexer
 
         Whitespace, Bad, EOF,
     }
-    public struct Token : INode
+    public class Token : Node
     {
         public Token(SyntaxKind _kind, string _lexeme, object _literal, TextSpan _span, int _line)
         {
@@ -61,14 +59,11 @@ namespace Stonylang_CSharp.Lexer
             Line = _line;
         }
 
-        public SyntaxKind Kind { get; }
+        public override SyntaxKind Kind { get; }
         public string Lexeme { get; }
         public object Literal { get; }
-        public TextSpan Span { get; }
         public int Line { get; }
-
-        public IEnumerable<INode> GetChildren() => Enumerable.Empty<INode>();
-        public override string ToString()
-            => $"Kind: {Kind}\nLexeme: {Lexeme}\nPosition: [{Span.Start}-{Span.Start + Span.Length}]{(Literal != null ? $"\nLiteral: {Literal}" : "")}";
+        public override TextSpan Span { get; }
+        public new string ToString() => $"Kind: {Kind}\nLexeme: {Lexeme}\nPosition: [{Span.Start}-{Span.Start + Span.Length}]{(Literal != null ? $"\nLiteral: {Literal}" : "")}";
     }
 }

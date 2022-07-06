@@ -2,6 +2,7 @@
 using Stonylang_CSharp.Utility;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 
 namespace Stonylang_CSharp.Evaluator
@@ -14,14 +15,20 @@ namespace Stonylang_CSharp.Evaluator
 
         public EvaluationResult Evaluate(Dictionary<string, VariableSymbol> symbolTable)
         {
-            Binder binder = new(_source, symbolTable);
+            var binderWatch = Stopwatch.StartNew();
+            Binder binder = new(SourceText.From(_source), symbolTable);
             BoundExpr boundExpr = binder.BindExpr(Syntax.Root);
+            binderWatch.Stop();
+            Console.WriteLine("TypeChecking: " + binderWatch.ElapsedMilliseconds + "ms");
 
             DiagnosticBag diagnostics = Syntax.Diagnostics.AddRange(binder.Diagnostics);
             if (diagnostics.Any()) return new EvaluationResult(diagnostics, null);
 
+            var evaluationWatch = Stopwatch.StartNew();
             Evaluator evaluator = new(boundExpr, symbolTable);
             object value = evaluator.Evaluate();
+            evaluationWatch.Stop();
+            Console.WriteLine("Evaluating: " + evaluationWatch.ElapsedMilliseconds + "ms\n");
             return new EvaluationResult(new(), value);
         }
     }

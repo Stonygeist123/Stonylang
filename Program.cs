@@ -1,8 +1,10 @@
 ﻿using Stonylang_CSharp.Utility;
 using Stonylang_CSharp.Evaluator;
+using Stonylang_CSharp.Parser;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Diagnostics;
 
 namespace Stonylang_CSharp
 {
@@ -30,7 +32,10 @@ namespace Stonylang_CSharp
                     continue;
                 }
 
+                var syntaxWatch = Stopwatch.StartNew();
                 SyntaxTree.SyntaxTree syntaxTree = SyntaxTree.SyntaxTree.Parse(input);
+                syntaxWatch.Stop();
+                Console.WriteLine("SyntaxTree: " + syntaxWatch.ElapsedMilliseconds + "ms");
                 Compilation compilation = new(syntaxTree, input);
                 EvaluationResult result = compilation.Evaluate(symbolTable);
 
@@ -48,36 +53,13 @@ namespace Stonylang_CSharp
                     if (showTree)
                     {
                         Console.ForegroundColor = ConsoleColor.DarkBlue;
-                        PrettyPrint(syntaxTree.Root);
+                        syntaxTree.Root.WriteTo(Console.Out);
                         Console.ResetColor();
                     }
 
                     Console.WriteLine(result.Value);
                 }
             }
-        }
-        // └──
-        // ├──
-        // |
-        static void PrettyPrint(Parser.INode node, string indent = "", bool isLast = true)
-        {
-            string marker = isLast ? "└──" : "├──";
-
-            Console.Write(indent);
-            Console.Write(marker);
-            Console.Write(node.Kind);
-
-            if (node is Lexer.Token @t && t.Literal != null)
-            {
-                Console.Write(" ");
-                Console.Write(t.Literal);
-            }
-            Console.WriteLine();
-
-            indent += isLast ? "   " : "|   ";
-            Parser.INode lastChild = node.GetChildren().LastOrDefault();
-
-            foreach (var child in node.GetChildren()) PrettyPrint(child, indent, child == lastChild);
         }
     }
 }

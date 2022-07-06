@@ -17,7 +17,9 @@ namespace Stonylang_CSharp.Binding
         Identity,
         Negation,
         Inv,
-        LogicalNegation
+        LogicalNegation,
+        Increment,
+        Decrement
     }
 
     internal enum BoundBinaryOpKind
@@ -27,13 +29,20 @@ namespace Stonylang_CSharp.Binding
         Multiplication,
         Division,
         Power,
+        Modulo,
         LogicalAnd,
         LogicalOr,
         LogicalNotEq,
         LogicalEq,
         And,
         Or,
-        Xor
+        Xor,
+        Greater,
+        GreaterEq,
+        Less,
+        LessEq,
+        Rsh,
+        Lsh
     }
 
     internal abstract class BoundNode

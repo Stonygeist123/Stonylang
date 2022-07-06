@@ -2,6 +2,7 @@
 using Stonylang_CSharp.Utility;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Stonylang_CSharp.Evaluator
 {
@@ -32,8 +33,8 @@ namespace Stonylang_CSharp.Evaluator
         private object EvaluateExpression(BoundExpr node)
         {
             if (node is BoundLiteralExpr l) return l.Value;
-            if (node is BoundVariableExpr v) return _symbolTable[v.Variable.Name].Value;
-            if (node is BoundAssignmentExpr a)
+            else if (node is BoundVariableExpr v) return _symbolTable[v.Variable.Name].Value;
+            else if (node is BoundAssignmentExpr a)
             {
                 object value = EvaluateExpression(a.Value);
                 if (_symbolTable.ContainsKey(a.Variable.Name))
@@ -41,8 +42,7 @@ namespace Stonylang_CSharp.Evaluator
                 else _symbolTable.Add(a.Variable.Name, new(a.Variable.Name, a.Type, value, a.Variable.Span));
                 return value;
             }
-
-            if (node is BoundUnaryExpr u)
+            else if (node is BoundUnaryExpr u)
             {
                 object operand = EvaluateExpression(u.Operand);
                 if (operand is int @iOperand)
@@ -51,6 +51,7 @@ namespace Stonylang_CSharp.Evaluator
                     {
                         BoundUnaryOpKind.Identity => iOperand,
                         BoundUnaryOpKind.Negation => -iOperand,
+                        BoundUnaryOpKind.LogicalNegation => Enumerable.Range(1, iOperand).Aggregate(1, (p, i) => p * i),
                         BoundUnaryOpKind.Inv => ~iOperand,
                         _ => throw new Exception($"Unexpected unary operator <{u.Op}>.")
                     };
@@ -64,7 +65,7 @@ namespace Stonylang_CSharp.Evaluator
                     };
                 }
             }
-            if (node is BoundBinaryExpr b)
+            else if (node is BoundBinaryExpr b)
             {
                 object left = EvaluateExpression(b.Left);
                 object right = EvaluateExpression(b.Right);
@@ -78,11 +79,17 @@ namespace Stonylang_CSharp.Evaluator
                         BoundBinaryOpKind.Multiplication => liO * riO,
                         BoundBinaryOpKind.Division => liO / riO,
                         BoundBinaryOpKind.Power => (int)Math.Pow(liO, riO),
-                        BoundBinaryOpKind.LogicalEq => liO == riO,
-                        BoundBinaryOpKind.LogicalNotEq => liO != riO,
+                        BoundBinaryOpKind.Modulo => liO % riO,
                         BoundBinaryOpKind.And => liO & riO,
                         BoundBinaryOpKind.Or => liO | riO,
-                        BoundBinaryOpKind.Xor => liO ^ riO,
+                        BoundBinaryOpKind.LogicalEq => liO == riO,
+                        BoundBinaryOpKind.LogicalNotEq => liO != riO,
+                        BoundBinaryOpKind.Greater => liO > riO,
+                        BoundBinaryOpKind.GreaterEq => liO >= riO,
+                        BoundBinaryOpKind.Less => liO < riO,
+                        BoundBinaryOpKind.LessEq => liO <= riO,
+                        BoundBinaryOpKind.Rsh => liO >> riO,
+                        BoundBinaryOpKind.Lsh => liO << riO,
                         _ => throw new Exception($"Unexpected binary operator <{b.Op}> for type {left.GetType()}.")
                     };
                 }
@@ -103,7 +110,7 @@ namespace Stonylang_CSharp.Evaluator
                 }
             }
 
-            throw new Exception($"Unexpected expression operator {node.Kind}.");
+            throw new Exception($"Unexpected node {node.Kind}.");
         }
     }
 }
