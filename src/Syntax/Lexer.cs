@@ -1,6 +1,5 @@
 ﻿using Stonylang_CSharp.SyntaxFacts;
 using Stonylang_CSharp.Utility;
-using System.Collections.Generic;
 
 namespace Stonylang_CSharp.Lexer
 {
@@ -136,6 +135,14 @@ namespace Stonylang_CSharp.Lexer
                 case ')':
                     ++_position;
                     _kind = SyntaxKind.RParen;
+                    break;
+                case '{':
+                    ++_position;
+                    _kind = SyntaxKind.LBrace;
+                    break;
+                case '}':
+                    ++_position;
+                    _kind = SyntaxKind.RBrace;
                     break;
                 case '&':
                     if (Peek(1) == '&')

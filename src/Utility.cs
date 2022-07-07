@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Stonylang_CSharp.Binding;
+using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 
 namespace Stonylang_CSharp.Utility
@@ -24,18 +26,20 @@ namespace Stonylang_CSharp.Utility
 
     public struct VariableSymbol
     {
-        public VariableSymbol(string name, Type type, object value, TextSpan? span)
+        public VariableSymbol(string name, Type type, object value, TextSpan? span, bool isMut = false)
         {
             Name = name;
             Type = type;
             Value = value;
             Span = span;
+            IsMut = isMut;
         }
 
         public string Name { get; }
         public Type Type { get; }
         public object Value { get; set; }
         public TextSpan? Span { get; }
+        public bool IsMut { get; }
     }
 
     public struct TextLine
@@ -92,7 +96,7 @@ namespace Stonylang_CSharp.Utility
                 }
             }
 
-            if (position > lineStart) AddLine(result, sourceText, lineStart, position, 0);
+            if (position >= lineStart) AddLine(result, sourceText, lineStart, position, 0);
             return result.ToImmutable();
         }
 
@@ -125,5 +129,42 @@ namespace Stonylang_CSharp.Utility
         public override string ToString() => _text;
         public string ToString(int start, int length) => _text.Substring(start, Math.Clamp(length + 1, 0, Length));
         public string ToString(TextSpan span) => ToString(span.Start, span.Length);
+    }
+
+    internal sealed class BoundScope
+    {
+        private readonly Dictionary<string, VariableSymbol> _variables = new();
+        public BoundScope Parent { get; }
+        public BoundScope(BoundScope parent) => Parent = parent;
+
+        public ImmutableArray<VariableSymbol> GetDeclaredVariables() => _variables.Values.ToImmutableArray();
+        public bool TryLookUp(string name, out VariableSymbol variable) => _variables.TryGetValue(name, out variable) || (Parent != null && Parent.TryLookUp(name, out variable));
+        public bool TryDeclare(VariableSymbol variable, out VariableSymbol oldVariable)
+        {
+            if (TryLookUp(variable.Name, out var v))
+            {
+                oldVariable = v;
+                return false;
+            }
+            oldVariable = variable;
+            _variables.Add(variable.Name, variable);
+            return true;
+        }
+    }
+
+    internal sealed class BoundGlobalScope
+    {
+        public BoundGlobalScope(BoundGlobalScope previous, DiagnosticBag diagnostics, ImmutableArray<VariableSymbol> variables, BoundStmt statement)
+        {
+            Previous = previous;
+            Diagnostics = diagnostics;
+            Variables = variables;
+            Statement = statement;
+        }
+
+        public BoundGlobalScope Previous { get; }
+        public DiagnosticBag Diagnostics { get; }
+        public ImmutableArray<VariableSymbol> Variables { get; }
+        public BoundStmt Statement { get; }
     }
 }

@@ -5,11 +5,17 @@ namespace Stonylang_CSharp.Binding
 {
     internal enum BoundNodeKind
     {
+        // Exprs
         LiteralExpr,
         UnaryExpr,
         BinaryExpr,
         VariableExpr,
-        AssignmentExpr
+        AssignmentExpr,
+
+        // Stmts
+        BlockStatement,
+        VariableStatement,
+        ExpressionStatement,
     }
 
     internal enum BoundUnaryOpKind

@@ -46,7 +46,13 @@ namespace Stonylang_CSharp.Lexer
         LiteralExpr, GroupingExpr, UnaryExpr, BinaryExpr,
         NameExpr, AssignmentExpr,
 
-        Whitespace, Bad, EOF,
+        // Stmts
+        ExpressionStmt, BlockStmt, VariableStmt,
+
+        // Nodes
+        CompilationUnit,
+
+        Whitespace, Bad, EOF
     }
     public class Token : Node
     {

@@ -1,8 +1,9 @@
-﻿using Stonylang_CSharp.Utility;
-using Stonylang_CSharp.Lexer;
+﻿using Stonylang_CSharp.Lexer;
 using Stonylang_CSharp.Parser;
+using Stonylang_CSharp.Utility;
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 
 namespace Stonylang_CSharp.Binding
 {
@@ -105,17 +106,87 @@ namespace Stonylang_CSharp.Binding
 
     internal sealed class Binder
     {
-        private readonly SourceText _source;
-        private readonly Dictionary<string, VariableSymbol> _symbolTable;
         private readonly DiagnosticBag _diagnostics = new();
+        private readonly SourceText _source;
+        private BoundScope _scope;
         public DiagnosticBag Diagnostics => _diagnostics;
-        public Binder(SourceText source, Dictionary<string, VariableSymbol> symbolTable)
+        public Binder(SourceText source, BoundScope parentScope)
         {
+            _scope = new(parentScope);
             _source = source;
-            _symbolTable = symbolTable;
         }
 
-        public BoundExpr BindExpr(ExprNode expr) => expr.Kind switch
+        public static BoundGlobalScope BindGlobalScope(BoundGlobalScope previous, SourceText source, CompilationUnitSyntax syntax)
+        {
+            BoundScope parentScope = CreateParentScope(previous);
+            Binder binder = new(source, parentScope);
+            BoundStmt stmt = binder.BindStatement(syntax.Statement);
+            ImmutableArray<VariableSymbol> variables = binder._scope.GetDeclaredVariables();
+            DiagnosticBag diagnostics = binder.Diagnostics;
+
+            if (previous != null) diagnostics = diagnostics.AddRange(previous.Diagnostics);
+            return new(previous, diagnostics, variables, stmt);
+        }
+
+        private static BoundScope CreateParentScope(BoundGlobalScope previous)
+        {
+            Stack<BoundGlobalScope> stack = new();
+            while (previous != null)
+            {
+                stack.Push(previous);
+                previous = previous.Previous;
+            }
+
+            BoundScope parent = null;
+            while (stack.Count > 0)
+            {
+                previous = stack.Pop();
+                BoundScope scope = new(parent);
+                foreach (var v in previous.Variables) scope.TryDeclare(v, out var _);
+
+                parent = scope;
+            }
+
+            return parent;
+        }
+
+        public BoundStmt BindStatement(StmtNode stmt) => stmt.Kind switch
+        {
+            SyntaxKind.BlockStmt => BindBlockStmt((BlockStmt)stmt),
+            SyntaxKind.VariableStmt => BindVariableStmt((VariableStmt)stmt),
+            SyntaxKind.ExpressionStmt => BindExpressionStmt((ExpressionStmt)stmt),
+            _ => throw new Exception($"Unexpected syntax \"{stmt.Kind}\"."),
+        };
+
+        private BoundBlockStmt BindBlockStmt(BlockStmt stmt)
+        {
+            ImmutableArray<BoundStmt>.Builder statements = ImmutableArray.CreateBuilder<BoundStmt>();
+            _scope = new(_scope);
+
+            foreach (StmtNode statement in stmt.Statements)
+                statements.Add(BindStatement(statement));
+
+            _scope = _scope.Parent;
+            return new(statements.ToImmutable());
+        }
+
+        private BoundVariableStmt BindVariableStmt(VariableStmt stmt)
+        {
+            BoundExpr initializer = BindExpression(stmt.Initializer);
+            VariableSymbol variable = new(stmt.Identifier.Lexeme, initializer.Type, null, stmt.Identifier.Span, stmt.IsMut);
+
+            if (!_scope.TryDeclare(variable, out _))
+                _diagnostics.Report(_source, stmt.Identifier.Span, $"Variable \"{stmt.Identifier.Lexeme}\" was already declared in the current or a previous scope.", "DeclarationException", LogLevel.Error);
+
+            /* if (!_scope.TryLookUp(variable.Name, out _))
+                _diagnostics.Report(_source, stmt.Identifier.Span, $"Variable \"{stmt.Identifier.Lexeme}\" was already declared in a previous scope.", "DeclarationWarning", LogLevel.Warn); */
+
+            return new(variable, initializer);
+        }
+
+        private BoundExpressionStmt BindExpressionStmt(ExpressionStmt stmt) => new(BindExpression(stmt.Expression));
+
+        public BoundExpr BindExpression(ExprNode expr) => expr.Kind switch
         {
             SyntaxKind.LiteralExpr => BindLiteralExpr((LiteralExpr)expr),
             SyntaxKind.UnaryExpr => BindUnaryExpr((UnaryExpr)expr),
@@ -128,7 +199,7 @@ namespace Stonylang_CSharp.Binding
         private static BoundExpr BindLiteralExpr(LiteralExpr expr) => new BoundLiteralExpr(expr.Value ?? 0);
         private BoundExpr BindUnaryExpr(UnaryExpr expr)
         {
-            BoundExpr boundOperand = BindExpr(expr.Operand);
+            BoundExpr boundOperand = BindExpression(expr.Operand);
             BoundUnaryOperator boundOperator = BoundUnaryOperator.Bind(expr.Op.Kind, boundOperand.Type);
             if (boundOperator != null)
             {
@@ -136,7 +207,7 @@ namespace Stonylang_CSharp.Binding
                 {
                     if (boundOperand is BoundVariableExpr bv)
                     {
-                        if (_symbolTable.TryGetValue(bv.Variable.Name, out var value))
+                        if (_scope.TryLookUp(bv.Variable.Name, out var value))
                         {
                             if (value.Type != typeof(int))
                                 _diagnostics.Report(_source, expr.Op.Span, $"Cannot assign type of \"int\" to {bv.Variable.Name}, which has a type of {bv.Variable.Type}", "TypeException", LogLevel.Error);
@@ -145,7 +216,7 @@ namespace Stonylang_CSharp.Binding
                         _diagnostics.Report(_source, expr.Op.Span, $"Could not find \"{bv.Variable.Name}\" in the current context.", "KeyNotFoundException", LogLevel.Error);
                     }
                     _diagnostics.Report(_source, expr.Op.Span,
-                        $"The operand of an {(boundOperator.OpKind == BoundUnaryOpKind.Increment ? "increment" : "decrement")} operator must be a variable with type of \"int\".", "AssignmentException", LogLevel.Error);
+                        $"The operand of an {(boundOperator.OpKind == BoundUnaryOpKind.Increment ? "increment" : "decrement")} operator must be a variable with type of \"int\".\nGot \"{boundOperand.Type}\"", "AssignmentException", LogLevel.Error);
                 }
                 return new BoundUnaryExpr(boundOperator, boundOperand);
             }
@@ -156,8 +227,8 @@ namespace Stonylang_CSharp.Binding
 
         private BoundExpr BindBinaryExpr(BinaryExpr expr)
         {
-            BoundExpr boundLeft = BindExpr(expr.Left);
-            BoundExpr boundRight = BindExpr(expr.Right);
+            BoundExpr boundLeft = BindExpression(expr.Left);
+            BoundExpr boundRight = BindExpression(expr.Right);
             BoundBinaryOperator boundOperator = BoundBinaryOperator.Bind(expr.Op.Kind, boundLeft.Type, boundRight.Type);
             if (boundOperator != null)
                 return new BoundBinaryExpr(boundLeft, boundOperator, boundRight);
@@ -169,7 +240,7 @@ namespace Stonylang_CSharp.Binding
         private BoundExpr BindNameExpr(NameExpr expr)
         {
             string name = expr.Name.Lexeme;
-            if (_symbolTable.TryGetValue(name, out var value)) return new BoundVariableExpr(value);
+            if (_scope.TryLookUp(name, out var value)) return new BoundVariableExpr(value);
             _diagnostics.Report(_source, expr.Name.Span, $"Could not find \"{name}\" in the current context.", "KeyNotFoundException", LogLevel.Error);
             return new BoundLiteralExpr(0);
         }
@@ -177,17 +248,27 @@ namespace Stonylang_CSharp.Binding
         private BoundExpr BindAssignmentExpr(AssignmentExpr expr)
         {
             string name = expr.Name.Lexeme;
-            BoundExpr value = BindExpr(expr.Value);
-            if (_symbolTable.TryGetValue(name, out var savedValue))
+            BoundExpr boundExpresion = BindExpression(expr.Value);
+
+            if (!_scope.TryLookUp(name, out var variable))
             {
-                if (!savedValue.Type.Equals(value.Type))
-                {
-                    _diagnostics.Report(_source, expr.Name.Span, $"Cannot assign a type of \"{value.Type}\" to \"{name}\", which has a type of \"{savedValue.Type}\".", "TypeException", LogLevel.Error);
-                    return new BoundLiteralExpr(0);
-                }
-                return new BoundAssignmentExpr(new(name, value.Type, null, (TextSpan)savedValue.Span), value);
+                _diagnostics.Report(_source, expr.Name.Span, $"Could not find \"{name}\" in the current context.", "KeyNotFoundException", LogLevel.Error);
+                return new BoundLiteralExpr(0);
             }
-            return new BoundAssignmentExpr(new(name, value.Type, null, expr.EqualsToken.Span), value);
+
+            if (!variable.IsMut)
+            {
+                _diagnostics.Report(_source, expr.Name.Span, $"Cannot assign to \"{name}\" since it is a read-only variable.", "AssignmentException", LogLevel.Error);
+                return new BoundLiteralExpr(0);
+            }
+
+            if (!variable.Type.Equals(boundExpresion.Type))
+            {
+                _diagnostics.Report(_source, expr.Name.Span, $"Cannot assign a type of \"{boundExpresion.Type}\" to \"{name}\", which has a type of \"{variable.Type}\".", "TypeException", LogLevel.Error);
+                return boundExpresion;
+            }
+
+            return new BoundAssignmentExpr(new(name, boundExpresion.Type, null, expr.EqualsToken.Span), boundExpresion);
         }
     }
 }

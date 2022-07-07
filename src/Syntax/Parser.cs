@@ -4,6 +4,7 @@ using Stonylang_CSharp.Utility;
 using Stonylang_CSharp.Lexer;
 using Stonylang_CSharp.SyntaxFacts;
 using System.Collections.Immutable;
+using System;
 
 namespace Stonylang_CSharp.Parser
 {
@@ -30,12 +31,36 @@ namespace Stonylang_CSharp.Parser
             _diagnostics.AddRange(lexer.Diagnostics);
             _source = source;
         }
-        public SyntaxTree.SyntaxTree Parse()
+
+        public CompilationUnitSyntax ParseCompilationUnit() => new CompilationUnitSyntax(ParseStatement(), Match(SyntaxKind.EOF));
+        public StmtNode ParseStatement()
         {
-            ExprNode expr = ParseExpression();
-            Token eofToken = Match(SyntaxKind.EOF);
-            return new SyntaxTree.SyntaxTree(_diagnostics, expr, eofToken);
+            if (Current.Kind == SyntaxKind.LBrace) return ParseBlockStmt();
+            else if (Current.Kind == SyntaxKind.Var) return ParseVariableStmt();
+            return ParseExpressionStmt();
         }
+
+        private BlockStmt ParseBlockStmt()
+        {
+            ImmutableArray<StmtNode>.Builder statements = ImmutableArray.CreateBuilder<StmtNode>();
+            Token lBrace = Match(SyntaxKind.LBrace);
+            while (Current.Kind != SyntaxKind.EOF && Current.Kind != SyntaxKind.RBrace) statements.Add(ParseStatement());
+
+            Token rBrace = Match(SyntaxKind.RBrace);
+            return new BlockStmt(lBrace, statements.ToImmutable(), rBrace);
+        }
+
+        private VariableStmt ParseVariableStmt()
+        {
+            Token varKeyword = Advance();
+            Token mutKeyword = Peek().Kind == SyntaxKind.Mut ? Match(SyntaxKind.Mut) : null;
+            Token identifier = Match(SyntaxKind.Identifier);
+            Match(SyntaxKind.Equals);
+            ExprNode initializr = ParseExpression();
+            return new VariableStmt(varKeyword, identifier, initializr, mutKeyword != null);
+        }
+
+        private ExpressionStmt ParseExpressionStmt() => new ExpressionStmt(ParseExpression());
 
         private ExprNode ParseExpression() => ParseAssignmentExpr();
         private ExprNode ParseAssignmentExpr()
@@ -119,7 +144,7 @@ namespace Stonylang_CSharp.Parser
                     return new NameExpr(Match(SyntaxKind.Identifier));
                 case SyntaxKind.Number:
                 default:
-                    return new LiteralExpr(Match(SyntaxKind.Number, "expression"));
+                    return new LiteralExpr(Match(SyntaxKind.Number, "Expected expression."));
             }
         }
 
@@ -131,10 +156,10 @@ namespace Stonylang_CSharp.Parser
             ++_position;
             return c;
         }
-        private Token Match(SyntaxKind expected, string expectedS = "")
+        private Token Match(SyntaxKind expected, string errorMessage = "")
         {
             if (Current.Kind == expected) return Advance();
-            _diagnostics.Report(_source, Current.Span, $"Unexpected \"{Current.Kind.GetText() ?? Current.Kind.ToString()}\", expected \"{(expectedS != "" ? expectedS : expected.GetText() ?? expected.ToString())}\".", "SyntaxException", LogLevel.Error);
+            _diagnostics.Report(_source, Current.Span, errorMessage != "" ? errorMessage : $"Unexpected \"{Current.Kind.GetText() ?? Current.Kind.ToString()}\", expected \"{expected.GetText() ?? expected.ToString()}\".", "SyntaxException", LogLevel.Error);
             return new Token(expected, Current.Lexeme, null, Current.Span, Current.Line);
         }
 
