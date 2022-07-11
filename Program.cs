@@ -13,7 +13,7 @@ namespace Stonylang_CSharp
         static void Main()
         {
             Dictionary<string, VariableSymbol> symbolTable = new();
-            bool showTree = false;
+            bool showTree = false, showProgram = false;
             Compilation previous = null;
 
             while (true)
@@ -27,6 +27,12 @@ namespace Stonylang_CSharp
                 {
                     showTree ^= true;
                     Console.WriteLine(showTree ? "Showing parse trees." : "Not showing parse trees.");
+                    continue;
+                }
+                else if (input.ToLower() == "#showprogram")
+                {
+                    showProgram ^= true;
+                    Console.WriteLine(showProgram ? "Showing program." : "Not showing program.");
                     continue;
                 }
                 else if (input.ToLower() == "#cls")
@@ -57,8 +63,14 @@ namespace Stonylang_CSharp
                     previous = compilation;
                     if (showTree)
                     {
-                        Console.ForegroundColor = ConsoleColor.DarkBlue;
+                        Console.ForegroundColor = ConsoleColor.DarkGray;
                         syntaxTree.Root.WriteTo(Console.Out);
+                        Console.ResetColor();
+                    }
+                    if (showProgram)
+                    {
+                        Console.ForegroundColor = ConsoleColor.DarkGray;
+                        compilation.EmitTree(Console.Out);
                         Console.ResetColor();
                     }
                     Console.WriteLine(result.Value);

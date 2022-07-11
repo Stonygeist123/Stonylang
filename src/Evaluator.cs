@@ -21,10 +21,10 @@ namespace Stonylang_CSharp.Evaluator
     internal sealed class Evaluator
     {
         private object _lastValue;
-        private readonly BoundStmt _root;
+        private readonly BoundBlockStmt _root;
         private readonly Dictionary<string, VariableSymbol> _symbolTable;
 
-        public Evaluator(BoundStmt root, Dictionary<string, VariableSymbol> symbolTable)
+        public Evaluator(BoundBlockStmt root, Dictionary<string, VariableSymbol> symbolTable)
         {
             _root = root;
             _symbolTable = symbolTable;
@@ -32,26 +32,45 @@ namespace Stonylang_CSharp.Evaluator
 
         public object Evaluate()
         {
-            EvaluateStatement(_root);
-            return _lastValue;
-        }
+            Dictionary<LabelSymbol, int> labelToIndex = new();
+            for (int i = 0; i < _root.Statements.Length; ++i)
+                if (_root.Statements[i] is BoundLabelStmt l)
+                    labelToIndex.Add(l.Label, i + 1);
 
-        private void EvaluateStatement(BoundStmt node)
-        {
-            switch (node)
+            int index = 0;
+            while (index < _root.Statements.Length)
             {
-                case BoundBlockStmt b:
-                    foreach (BoundStmt stmt in b.Statements) EvaluateStatement(stmt);
-                    break;
-                case BoundExpressionStmt e:
-                    _lastValue = EvaluateExpression(e.Expression);
-                    break;
-                case BoundVariableStmt v:
-                    EvaluateVariableStmt(v);
-                    break;
-                default:
-                    throw new Exception($"Unexpected node {node.Kind}.");
+                BoundStmt s = _root.Statements[index];
+                switch (s.Kind)
+                {
+                    case BoundNodeKind.VariableStatement:
+                        EvaluateVariableStmt((BoundVariableStmt)s);
+                        ++index;
+                        break;
+                    case BoundNodeKind.ExpressionStatement:
+                        _lastValue = EvaluateExpression(((BoundExpressionStmt)s).Expression);
+                        ++index;
+                        break;
+                    case BoundNodeKind.GoToStatement:
+                        BoundGoToStmt gs = (BoundGoToStmt)s;
+                        index = labelToIndex[gs.Label];
+                        break;
+                    case BoundNodeKind.ConditionalGoToStatement:
+                        BoundConditionalGoToStmt cgs = (BoundConditionalGoToStmt)s;
+                        bool condition = (bool)EvaluateExpression(cgs.Condition);
+                        if (condition && !cgs.JumpIfFalse || !condition && cgs.JumpIfFalse)
+                            index = labelToIndex[cgs.Label];
+                        else
+                            ++index;
+                        break;
+                    case BoundNodeKind.LabelStatement:
+                        ++index;
+                        break;
+                    default:
+                        throw new Exception($"Unexpected node {s.Kind}.");
+                }
             }
+            return _lastValue;
         }
 
         private void EvaluateVariableStmt(BoundVariableStmt v)
@@ -116,8 +135,6 @@ namespace Stonylang_CSharp.Evaluator
                                 BoundBinaryOpKind.Division => liO / riO,
                                 BoundBinaryOpKind.Power => (int)Math.Pow(liO, riO),
                                 BoundBinaryOpKind.Modulo => liO % riO,
-                                BoundBinaryOpKind.And => liO & riO,
-                                BoundBinaryOpKind.Or => liO | riO,
                                 BoundBinaryOpKind.LogicalEq => liO == riO,
                                 BoundBinaryOpKind.LogicalNotEq => liO != riO,
                                 BoundBinaryOpKind.Greater => liO > riO,
@@ -126,7 +143,9 @@ namespace Stonylang_CSharp.Evaluator
                                 BoundBinaryOpKind.LessEq => liO <= riO,
                                 BoundBinaryOpKind.Rsh => liO >> riO,
                                 BoundBinaryOpKind.Lsh => liO << riO,
-                                BoundBinaryOpKind.Xor => liO ^ riO,
+                                BoundBinaryOpKind.BitwiseAnd => liO & riO,
+                                BoundBinaryOpKind.BitwiseOr => liO | riO,
+                                BoundBinaryOpKind.BitwiseXor => liO ^ riO,
                                 _ => throw new Exception($"Unexpected binary operator <{b.Op.Kind}> for type {left.GetType()}.")
                             };
 
@@ -137,9 +156,9 @@ namespace Stonylang_CSharp.Evaluator
                                 BoundBinaryOpKind.LogicalOr => lbO || rbO,
                                 BoundBinaryOpKind.LogicalEq => lbO == rbO,
                                 BoundBinaryOpKind.LogicalNotEq => lbO != rbO,
-                                BoundBinaryOpKind.And => lbO & rbO,
-                                BoundBinaryOpKind.Or => lbO | rbO,
-                                BoundBinaryOpKind.Xor => lbO ^ rbO,
+                                BoundBinaryOpKind.BitwiseAnd => lbO & rbO,
+                                BoundBinaryOpKind.BitwiseOr => lbO | rbO,
+                                BoundBinaryOpKind.BitwiseXor => lbO ^ rbO,
                                 _ => throw new Exception($"Unexpected binary operator <{b.Op}> for type {left.GetType()}.")
                             };
 

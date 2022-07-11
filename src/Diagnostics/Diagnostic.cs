@@ -25,9 +25,9 @@ namespace Stonylang_CSharp.Utility
             int c = Span.Start - line.Start + 1;
             string levelS = Level switch
             {
-                LogLevel.Error => "Error",
-                LogLevel.Warn => "Warn ",
-                LogLevel.Info => "Info ",
+                LogLevel.Error => "Error   ",
+                LogLevel.Warn => "Warning ",
+                LogLevel.Info => "Info    ",
                 _ => "Unknown Exception"
             };
             string msg = $"[{levelS} {lineIndex + 1}:{c}{(Span.End <= c ? "" : $"-{Span.End}")}] ",

@@ -73,9 +73,9 @@ namespace Stonylang_CSharp.Binding
             new(SyntaxKind.Slash, BoundBinaryOpKind.Division, typeof(int)),
             new(SyntaxKind.Power, BoundBinaryOpKind.Power, typeof(int)),
             new(SyntaxKind.Mod, BoundBinaryOpKind.Modulo, typeof(int)),
-            new(SyntaxKind.Or, BoundBinaryOpKind.Or, typeof(int)),
-            new(SyntaxKind.And, BoundBinaryOpKind.And, typeof(int)),
-            new(SyntaxKind.Xor, BoundBinaryOpKind.Xor, typeof(int)),
+            new(SyntaxKind.Or, BoundBinaryOpKind.BitwiseOr, typeof(int)),
+            new(SyntaxKind.And, BoundBinaryOpKind.BitwiseAnd, typeof(int)),
+            new(SyntaxKind.Xor, BoundBinaryOpKind.BitwiseXor, typeof(int)),
             new(SyntaxKind.Rsh, BoundBinaryOpKind.Rsh, typeof(int)),
             new(SyntaxKind.Lsh, BoundBinaryOpKind.Lsh, typeof(int)),
 
@@ -91,9 +91,9 @@ namespace Stonylang_CSharp.Binding
             new(SyntaxKind.LogicalOr, BoundBinaryOpKind.LogicalOr, typeof(bool)),
             new(SyntaxKind.EqEq, BoundBinaryOpKind.LogicalEq, typeof(bool)),
             new(SyntaxKind.NotEq, BoundBinaryOpKind.LogicalNotEq, typeof(bool)),
-            new(SyntaxKind.Or, BoundBinaryOpKind.Or, typeof(bool)),
-            new(SyntaxKind.And, BoundBinaryOpKind.And, typeof(bool)),
-            new(SyntaxKind.Xor, BoundBinaryOpKind.Xor, typeof(bool))
+            new(SyntaxKind.Or, BoundBinaryOpKind.BitwiseOr, typeof(bool)),
+            new(SyntaxKind.And, BoundBinaryOpKind.BitwiseAnd, typeof(bool)),
+            new(SyntaxKind.Xor, BoundBinaryOpKind.BitwiseXor, typeof(bool))
         };
 
         public static BoundBinaryOperator Bind(SyntaxKind kind, Type leftType, Type rightType)
@@ -104,7 +104,7 @@ namespace Stonylang_CSharp.Binding
         }
     }
 
-    internal sealed class Binder
+    internal sealed partial class Binder
     {
         private readonly DiagnosticBag _diagnostics = new();
         private readonly SourceText _source;
@@ -154,6 +154,9 @@ namespace Stonylang_CSharp.Binding
         {
             SyntaxKind.BlockStmt => BindBlockStmt((BlockStmt)stmt),
             SyntaxKind.VariableStmt => BindVariableStmt((VariableStmt)stmt),
+            SyntaxKind.IfStmt => BindIfStmt((IfStmt)stmt),
+            SyntaxKind.WhileStmt => BindWhileStmt((WhileStmt)stmt),
+            SyntaxKind.ForStmt => BindForStmt((ForStmt)stmt),
             SyntaxKind.ExpressionStmt => BindExpressionStmt((ExpressionStmt)stmt),
             _ => throw new Exception($"Unexpected syntax \"{stmt.Kind}\"."),
         };
@@ -176,15 +179,44 @@ namespace Stonylang_CSharp.Binding
             VariableSymbol variable = new(stmt.Identifier.Lexeme, initializer.Type, null, stmt.Identifier.Span, stmt.IsMut);
 
             if (!_scope.TryDeclare(variable, out _))
-                _diagnostics.Report(_source, stmt.Identifier.Span, $"Variable \"{stmt.Identifier.Lexeme}\" was already declared in the current or a previous scope.", "DeclarationException", LogLevel.Error);
-
-            /* if (!_scope.TryLookUp(variable.Name, out _))
-                _diagnostics.Report(_source, stmt.Identifier.Span, $"Variable \"{stmt.Identifier.Lexeme}\" was already declared in a previous scope.", "DeclarationWarning", LogLevel.Warn); */
+                _diagnostics.Report(_source, stmt.Keyword.Span, $"Variable \"{stmt.Identifier.Lexeme}\" was already declared in the current or a previous scope.", "DeclarationException", LogLevel.Error);
 
             return new(variable, initializer);
         }
 
+        private BoundIfStmt BindIfStmt(IfStmt stmt)
+        {
+            BoundExpr condition = BindExpression(stmt.Condition, typeof(bool));
+            return new(condition, BindBlockStmt(stmt.ThenBranch), stmt.ElseBranch == null ? null : BindBlockStmt(stmt.ElseBranch.ElseBranch));
+        }
+
+        private BoundWhileStmt BindWhileStmt(WhileStmt stmt)
+        {
+            BoundExpr condition = stmt.Condition == null ? new BoundLiteralExpr(true) : BindExpression(stmt.Condition, typeof(bool));
+            return new(condition, BindBlockStmt(stmt.ThenBranch), stmt.IsDoWhile);
+        }
+
+        private BoundForStmt BindForStmt(ForStmt stmt)
+        {
+            BoundExpr initialValue = BindExpression(stmt.InitialValue, typeof(int));
+            VariableSymbol variable = new(stmt.Identifier.Lexeme, initialValue.Type, null, stmt.Identifier.Span, stmt.IsMut);
+            if (!_scope.TryDeclare(variable, out _))
+                _diagnostics.Report(_source, stmt.Identifier.Span, $"Variable \"{stmt.Identifier.Lexeme}\" was already declared in the current or a previous scope.", "DeclarationException", LogLevel.Error);
+
+            BoundExpr range = BindExpression(stmt.Range, typeof(int));
+            return new(variable, initialValue, range, BindBlockStmt(stmt.Stmt));
+        }
+
         private BoundExpressionStmt BindExpressionStmt(ExpressionStmt stmt) => new(BindExpression(stmt.Expression));
+
+
+        public BoundExpr BindExpression(ExprNode expr, Type expectedType)
+        {
+            BoundExpr expression = BindExpression(expr);
+            if (expression.Type != expectedType)
+                _diagnostics.Report(_source, expr.Span, $"Cannot convert type of {expression.Type} to type of {expectedType}.", "TypeException", LogLevel.Error);
+            return expression;
+        }
 
         public BoundExpr BindExpression(ExprNode expr) => expr.Kind switch
         {
@@ -207,11 +239,13 @@ namespace Stonylang_CSharp.Binding
                 {
                     if (boundOperand is BoundVariableExpr bv)
                     {
-                        if (_scope.TryLookUp(bv.Variable.Name, out var value))
+                        if (_scope.TryLookUp(bv.Variable.Name, out var variable))
                         {
-                            if (value.Type != typeof(int))
-                                _diagnostics.Report(_source, expr.Op.Span, $"Cannot assign type of \"int\" to {bv.Variable.Name}, which has a type of {bv.Variable.Type}", "TypeException", LogLevel.Error);
-                            return new BoundAssignmentExpr(bv.Variable, new BoundBinaryExpr(new BoundVariableExpr(value), BoundBinaryOperator.Bind(boundOperator.Kind == SyntaxKind.Increment ? SyntaxKind.Plus : SyntaxKind.Minus, typeof(int), typeof(int)), new BoundLiteralExpr(1)));
+                            if (!variable.IsMut)
+                                _diagnostics.Report(_source, expr.Op.Span, $"Cannot assign to \"{bv.Variable.Name}\" since it is a read-only variable.", "AssignmentExcption", LogLevel.Error);
+                            if (variable.Type != typeof(int))
+                                _diagnostics.Report(_source, expr.Op.Span, $"Cannot assign type of \"int\" to {bv.Variable.Name}, which has a type of {bv.Variable.Type}.", "TypeException", LogLevel.Error);
+                            return new BoundAssignmentExpr(bv.Variable, new BoundBinaryExpr(new BoundVariableExpr(variable), BoundBinaryOperator.Bind(boundOperator.Kind == SyntaxKind.Increment ? SyntaxKind.Plus : SyntaxKind.Minus, typeof(int), typeof(int)), new BoundLiteralExpr(1)));
                         }
                         _diagnostics.Report(_source, expr.Op.Span, $"Could not find \"{bv.Variable.Name}\" in the current context.", "KeyNotFoundException", LogLevel.Error);
                     }
@@ -240,6 +274,9 @@ namespace Stonylang_CSharp.Binding
         private BoundExpr BindNameExpr(NameExpr expr)
         {
             string name = expr.Name.Lexeme;
+            if (string.IsNullOrEmpty(name))
+                return new BoundLiteralExpr(0);
+
             if (_scope.TryLookUp(name, out var value)) return new BoundVariableExpr(value);
             _diagnostics.Report(_source, expr.Name.Span, $"Could not find \"{name}\" in the current context.", "KeyNotFoundException", LogLevel.Error);
             return new BoundLiteralExpr(0);

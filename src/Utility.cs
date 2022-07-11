@@ -22,6 +22,7 @@ namespace Stonylang_CSharp.Utility
         public int Length { get; }
         public int End => Start + Length;
         public static TextSpan FromRounds(int start, int end) => new(start, end - start);
+        public override string ToString() => $"{Start}..{End}";
     }
 
     public struct VariableSymbol
@@ -40,6 +41,14 @@ namespace Stonylang_CSharp.Utility
         public object Value { get; set; }
         public TextSpan? Span { get; }
         public bool IsMut { get; }
+        public override string ToString() => Name;
+    }
+
+    public struct LabelSymbol
+    {
+        public LabelSymbol(string name) => Name = name;
+        public string Name { get; }
+        public override string ToString() => Name;
     }
 
     public struct TextLine

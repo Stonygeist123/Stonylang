@@ -1,4 +1,5 @@
-﻿using Stonylang_CSharp.Utility;
+﻿using Stonylang_CSharp.Lexer;
+using Stonylang_CSharp.Utility;
 using System;
 
 namespace Stonylang_CSharp.Binding
@@ -15,7 +16,13 @@ namespace Stonylang_CSharp.Binding
         // Stmts
         BlockStatement,
         VariableStatement,
+        IfStatement,
+        WhileStatement,
+        ForStatement,
         ExpressionStatement,
+        GoToStatement,
+        ConditionalGoToStatement,
+        LabelStatement
     }
 
     internal enum BoundUnaryOpKind
@@ -40,20 +47,15 @@ namespace Stonylang_CSharp.Binding
         LogicalOr,
         LogicalNotEq,
         LogicalEq,
-        And,
-        Or,
-        Xor,
+        BitwiseAnd,
+        BitwiseOr,
+        BitwiseXor,
         Greater,
         GreaterEq,
         Less,
         LessEq,
         Rsh,
         Lsh
-    }
-
-    internal abstract class BoundNode
-    {
-        public abstract BoundNodeKind Kind { get; }
     }
 
     internal abstract class BoundExpr : BoundNode

@@ -35,29 +35,76 @@ namespace Stonylang_CSharp.Parser
         public CompilationUnitSyntax ParseCompilationUnit() => new CompilationUnitSyntax(ParseStatement(), Match(SyntaxKind.EOF));
         public StmtNode ParseStatement()
         {
-            if (Current.Kind == SyntaxKind.LBrace) return ParseBlockStmt();
-            else if (Current.Kind == SyntaxKind.Var) return ParseVariableStmt();
-            return ParseExpressionStmt();
+            return Current.Kind switch
+            {
+                SyntaxKind.LBrace => ParseBlockStmt(),
+                SyntaxKind.Var => ParseVariableStmt(),
+                SyntaxKind.If => ParseIfStmt(),
+                SyntaxKind.Do or SyntaxKind.While => ParseWhileStmt(),
+                SyntaxKind.For => ParseForStmt(),
+                _ => ParseExpressionStmt()
+            };
         }
 
         private BlockStmt ParseBlockStmt()
         {
             ImmutableArray<StmtNode>.Builder statements = ImmutableArray.CreateBuilder<StmtNode>();
             Token lBrace = Match(SyntaxKind.LBrace);
-            while (Current.Kind != SyntaxKind.EOF && Current.Kind != SyntaxKind.RBrace) statements.Add(ParseStatement());
+            while (Current.Kind != SyntaxKind.EOF && Current.Kind != SyntaxKind.RBrace)
+            {
+                Token startToken = Current;
+                statements.Add(ParseStatement());
 
-            Token rBrace = Match(SyntaxKind.RBrace);
-            return new BlockStmt(lBrace, statements.ToImmutable(), rBrace);
+                if (Current == startToken)
+                    Advance();
+            }
+            return new BlockStmt(lBrace, statements.ToImmutable(), Match(SyntaxKind.RBrace));
         }
 
         private VariableStmt ParseVariableStmt()
         {
             Token varKeyword = Advance();
-            Token mutKeyword = Peek().Kind == SyntaxKind.Mut ? Match(SyntaxKind.Mut) : null;
+            Token mutKeyword = Current.Kind == SyntaxKind.Mut ? Match(SyntaxKind.Mut) : null;
             Token identifier = Match(SyntaxKind.Identifier);
             Match(SyntaxKind.Equals);
             ExprNode initializr = ParseExpression();
             return new VariableStmt(varKeyword, identifier, initializr, mutKeyword != null);
+        }
+
+        private IfStmt ParseIfStmt()
+        {
+            Token keyword = Match(SyntaxKind.If);
+            ExprNode condition = ParseExpression();
+            BlockStmt thenBranch = ParseBlockStmt();
+            ElseClauseStmt elseBranch = Current.Kind == SyntaxKind.Else ? new(Match(SyntaxKind.Else), ParseBlockStmt()) : null;
+            return new(keyword, condition, thenBranch, elseBranch);
+        }
+
+        private WhileStmt ParseWhileStmt()
+        {
+            bool isDoWhile = Current.Kind == SyntaxKind.Do;
+            if (isDoWhile)
+            {
+                Match(SyntaxKind.Do);
+                BlockStmt thenBranch = ParseBlockStmt();
+                Token keyword = Match(SyntaxKind.While);
+                return new(keyword, ParseExpression(), thenBranch, isDoWhile);
+            }
+            return new(Match(SyntaxKind.While), Current.Kind == SyntaxKind.LBrace ? null : ParseExpression(), ParseBlockStmt(), isDoWhile);
+        }
+
+        private ForStmt ParseForStmt()
+        {
+            Token keyword = Match(SyntaxKind.For);
+            bool isMut = Current.Kind == SyntaxKind.Mut;
+            if (isMut) Match(SyntaxKind.Mut);
+            Token identifier = Match(SyntaxKind.Identifier);
+            Match(SyntaxKind.Equals);
+            ExprNode initialValue = ParseExpression();
+            Match(SyntaxKind.To);
+            ExprNode range = ParseExpression();
+            BlockStmt stmt = ParseBlockStmt();
+            return new(keyword, identifier, isMut, initialValue, range, stmt);
         }
 
         private ExpressionStmt ParseExpressionStmt() => new ExpressionStmt(ParseExpression());

@@ -36,7 +36,7 @@ namespace Stonylang_CSharp.Lexer
         // Keywords
         Fn, Class, If, Else, Switch, Case, Default,
         Var, Mut, Break, Continue, True, False, Return,
-        While, Do, For, ForEach, Async, Await, GoTo,
+        While, Do, For, ForEach, Async, Await, GoTo, To,
 
         // Others
         Semicolon, Comma, LParen, RParen, LBrace, RBrace,
@@ -48,6 +48,7 @@ namespace Stonylang_CSharp.Lexer
 
         // Stmts
         ExpressionStmt, BlockStmt, VariableStmt,
+        IfStmt, ElseClauseStmt, WhileStmt, ForStmt,
 
         // Nodes
         CompilationUnit,

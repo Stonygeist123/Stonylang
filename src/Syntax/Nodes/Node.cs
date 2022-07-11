@@ -1,4 +1,5 @@
 ﻿using Stonylang_CSharp.Lexer;
+using Stonylang_CSharp.SyntaxFacts;
 using Stonylang_CSharp.Utility;
 using System.Collections.Generic;
 using System.IO;
@@ -14,20 +15,26 @@ namespace Stonylang_CSharp.Parser
         public IEnumerable<Node> GetChildren()
         {
             foreach (PropertyInfo prop in GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance))
-                if (typeof(Node).IsAssignableFrom(prop.PropertyType))
-                    yield return (Node)prop.GetValue(this);
+                if (typeof(Node).IsAssignableFrom(prop.PropertyType) && prop is not null)
+                {
+                    Node child = (Node)prop.GetValue(this);
+                    if (child != null)
+                        yield return child;
+                }
                 else if (typeof(IEnumerable<Node>).IsAssignableFrom(prop.PropertyType))
                     foreach (Node child in (IEnumerable<Node>)prop.GetValue(this))
-                        yield return child;
+                        if (child != null)
+                            yield return child;
         }
 
         public void WriteTo(TextWriter writer) => PrettyPrint(writer, this);
         private static void PrettyPrint(TextWriter writer, Node node, string indent = "", bool isLast = true)
         {
+            if (node == null) return;
             string marker = isLast ? "└──" : "├──";
             writer.Write(indent);
             writer.Write(marker);
-            writer.Write(node.Kind);
+            writer.Write(node.Kind.GetText() ?? node.Kind.ToString());
 
             if (node is Token @t && t.Literal != null)
             {
@@ -37,7 +44,8 @@ namespace Stonylang_CSharp.Parser
             writer.WriteLine();
             indent += isLast ? "   " : "|   ";
             Node lastChild = node.GetChildren().LastOrDefault();
-            foreach (var child in node.GetChildren()) PrettyPrint(writer, child, indent, child == lastChild);
+            foreach (var child in node.GetChildren())
+                PrettyPrint(writer, child, indent, child == lastChild);
         }
 
         public new string ToString()

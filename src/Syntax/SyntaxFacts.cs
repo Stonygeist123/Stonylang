@@ -36,6 +36,9 @@ namespace Stonylang_CSharp.SyntaxFacts
             "mut" => SyntaxKind.Mut,
             "if" => SyntaxKind.If,
             "else" => SyntaxKind.Else,
+            "while" => SyntaxKind.While,
+            "do" => SyntaxKind.Do,
+            "for" => SyntaxKind.For,
             "switch" => SyntaxKind.Switch,
             "case" => SyntaxKind.Case,
             "default" => SyntaxKind.Default,
@@ -44,13 +47,11 @@ namespace Stonylang_CSharp.SyntaxFacts
             "fn" => SyntaxKind.Fn,
             "class" => SyntaxKind.Class,
             "return" => SyntaxKind.Return,
-            "while" => SyntaxKind.While,
-            "do" => SyntaxKind.Do,
-            "for" => SyntaxKind.For,
             "foreach" => SyntaxKind.ForEach,
             "async" => SyntaxKind.Async,
             "await" => SyntaxKind.Await,
             "goto" => SyntaxKind.GoTo,
+            "to" => SyntaxKind.To,
             _ => SyntaxKind.Identifier
         };
 

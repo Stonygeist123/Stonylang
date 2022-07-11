@@ -280,9 +280,9 @@ namespace Stonylang_CSharp.Lexer
                 default:
                     if (char.IsDigit(Current)) ReadNumber();
                     else if (char.IsWhiteSpace(Current)) ReadWhitespace();
-                    else if (char.IsLetter(Current))
+                    else if (char.IsLetter(Current) || Current == '_')
                     {
-                        while (char.IsLetter(Current)) Advance();
+                        while (char.IsLetterOrDigit(Current) || Current == '_') Advance();
                         _kind = SyntaxFacts.SyntaxFacts.GetKeywordKind(_source.ToString()[_start.._position]);
                     }
                     else
