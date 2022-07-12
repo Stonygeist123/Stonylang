@@ -8,6 +8,7 @@ using System.Linq;
 using System.Collections.Specialized;
 using Stonylang.Lexer;
 using Stonylang.SyntaxFacts;
+using Stonylang.Parser;
 
 namespace Stonylang
 {
@@ -287,7 +288,15 @@ namespace Stonylang
             string line = document[lineIndex];
             int start = view.CurrentCharacter;
             if (start >= line.Length)
+            {
+                if (view.CurrentLine == document.Count - 1)
+                    return;
+
+                string newLine = document[view.CurrentLine + 1];
+                document[view.CurrentLine] += newLine;
+                document.RemoveAt(view.CurrentLine + 1);
                 return;
+            }
 
             string before = line.Substring(0, start);
             string after = line[(start + 1)..];
@@ -324,8 +333,10 @@ namespace Stonylang
 
         private void UpdateDocumentFromHistory(ObservableCollection<string> document, SubmissionView view)
         {
-            document.Clear();
+            if (_submissionHistory.Count == 0)
+                return;
 
+            document.Clear();
             string historyItem = _submissionHistory[_submissionHistoryIndex];
             foreach (string line in historyItem.Split(Environment.NewLine))
                 document.Add(line);
@@ -385,11 +396,10 @@ namespace Stonylang
                 return true;
 
             SyntaxTree.SyntaxTree syntaxTree = SyntaxTree.SyntaxTree.Parse(text);
-            if (syntaxTree.Diagnostics.Any())
-                return false;
-            return true;
+            return !GetLastToken(syntaxTree.Root.Statement).IsMissing;
         }
 
+        private Token GetLastToken(Node node) => node is Token t ? t : GetLastToken(node.GetChildren().Last());
         protected override void EvaluateMetaCommand(string input)
         {
             switch (input.ToLower())

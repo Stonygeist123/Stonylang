@@ -71,6 +71,7 @@ namespace Stonylang.Lexer
         public object Literal { get; }
         public int Line { get; }
         public override TextSpan Span { get; }
+        public bool IsMissing => Lexeme == null;
         public new string ToString() => $"Kind: {Kind}\nLexeme: {Lexeme}\nPosition: [{Span.Start}-{Span.Start + Span.Length}]{(Literal != null ? $"\nLiteral: {Literal}" : "")}";
     }
 }
