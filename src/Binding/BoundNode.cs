@@ -1,11 +1,11 @@
-﻿using Stonylang_CSharp.SyntaxFacts;
+﻿using Stonylang.SyntaxFacts;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 
-namespace Stonylang_CSharp.Binding
+namespace Stonylang.Binding
 {
     internal abstract class BoundNode
     {

@@ -1,7 +1,7 @@
-﻿using Stonylang_CSharp.Lexer;
+﻿using Stonylang.Lexer;
 using System.Collections.Immutable;
 
-namespace Stonylang_CSharp.Parser
+namespace Stonylang.Parser
 {
     public abstract class StmtNode : Node { }
 

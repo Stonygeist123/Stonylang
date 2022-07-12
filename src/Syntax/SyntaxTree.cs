@@ -1,10 +1,10 @@
-﻿using Stonylang_CSharp.Utility;
-using Stonylang_CSharp.Lexer;
-using Stonylang_CSharp.Parser;
+﻿using Stonylang.Utility;
+using Stonylang.Lexer;
+using Stonylang.Parser;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 
-namespace Stonylang_CSharp.SyntaxTree
+namespace Stonylang.SyntaxTree
 {
     public class SyntaxTree
     {
@@ -26,15 +26,17 @@ namespace Stonylang_CSharp.SyntaxTree
 
         public static SyntaxTree Parse(SourceText source) => new SyntaxTree(source);
         public static SyntaxTree Parse(string source) => Parse(SourceText.From(source));
-        public static IEnumerable<Token> ParseTokens(string source) => ParseTokens(SourceText.From(source));
-        public static IEnumerable<Token> ParseTokens(SourceText source)
+        public static IEnumerable<Token> ParseTokens(string source)
         {
-            Lexer.Lexer lexer = new(source);
-            while (true)
+            if (!string.IsNullOrWhiteSpace(source))
             {
-                Token token = lexer.Lex();
-                if (token.Kind == SyntaxKind.EOF) break;
-                yield return token;
+                Lexer.Lexer lexer = new(SourceText.From(source));
+                while (true)
+                {
+                    Token token = lexer.Lex();
+                    if (token.Kind == SyntaxKind.EOF) break;
+                    yield return token;
+                }
             }
         }
     }

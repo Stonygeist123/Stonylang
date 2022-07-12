@@ -1,10 +1,10 @@
-﻿using Stonylang_CSharp.Binding;
-using Stonylang_CSharp.Utility;
+﻿using Stonylang.Binding;
+using Stonylang.Utility;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Stonylang_CSharp.Evaluator
+namespace Stonylang.Evaluator
 {
     public sealed class EvaluationResult
     {
@@ -58,7 +58,7 @@ namespace Stonylang_CSharp.Evaluator
                     case BoundNodeKind.ConditionalGoToStatement:
                         BoundConditionalGoToStmt cgs = (BoundConditionalGoToStmt)s;
                         bool condition = (bool)EvaluateExpression(cgs.Condition);
-                        if (condition && !cgs.JumpIfFalse || !condition && cgs.JumpIfFalse)
+                        if (condition == cgs.JumpIfTrue)
                             index = labelToIndex[cgs.Label];
                         else
                             ++index;

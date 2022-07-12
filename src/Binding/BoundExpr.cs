@@ -1,8 +1,8 @@
-﻿using Stonylang_CSharp.Lexer;
-using Stonylang_CSharp.Utility;
+﻿using Stonylang.Lexer;
+using Stonylang.Utility;
 using System;
 
-namespace Stonylang_CSharp.Binding
+namespace Stonylang.Binding
 {
     internal enum BoundNodeKind
     {

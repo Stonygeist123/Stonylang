@@ -1,12 +1,12 @@
-﻿using Stonylang_CSharp.Binding;
-using Stonylang_CSharp.Lexer;
-using Stonylang_CSharp.Utility;
+﻿using Stonylang.Binding;
+using Stonylang.Lexer;
+using Stonylang.Utility;
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 
-namespace Stonylang_CSharp.Lowering
+namespace Stonylang.Lowering
 {
     internal sealed class Lowerer : BoundTreeRewriter
     {
@@ -38,7 +38,7 @@ namespace Stonylang_CSharp.Lowering
             if (node.ElseBranch == null)
             {
                 LabelSymbol endLabel = GenerateLabel();
-                BoundConditionalGoToStmt gotoFalse = new(endLabel, node.Condition, true);
+                BoundConditionalGoToStmt gotoFalse = new(endLabel, node.Condition, false);
                 BoundLabelStmt endLabelStmt = new(endLabel);
                 BoundBlockStmt result = new(ImmutableArray.Create<BoundStmt>(gotoFalse, node.ThenBranch, endLabelStmt));
                 return RewriteStmt(result);
@@ -48,7 +48,7 @@ namespace Stonylang_CSharp.Lowering
                 LabelSymbol elseLabel = GenerateLabel();
                 LabelSymbol endLabel = GenerateLabel();
 
-                BoundConditionalGoToStmt gotoFalse = new(elseLabel, node.Condition, true);
+                BoundConditionalGoToStmt gotoFalse = new(elseLabel, node.Condition, false);
                 BoundGoToStmt gotoEndStmt = new(endLabel);
                 BoundLabelStmt elseLabelStmt = new(elseLabel);
                 BoundLabelStmt endLabelStmt = new(endLabel);
@@ -66,7 +66,7 @@ namespace Stonylang_CSharp.Lowering
             BoundGoToStmt gotoCheck = new(checkLabel);
             BoundLabelStmt continueLabelStmt = new(continueLabel);
             BoundLabelStmt checkLabelStmt = new(checkLabel);
-            BoundConditionalGoToStmt gotoTrue = new(continueLabel, node.Condition, false);
+            BoundConditionalGoToStmt gotoTrue = new(continueLabel, node.Condition);
             BoundLabelStmt endLabelStmt = new(endLabel);
             BoundBlockStmt result = new(ImmutableArray.Create<BoundStmt>(gotoCheck, continueLabelStmt, node.Stmt, checkLabelStmt, gotoTrue, endLabelStmt));
             return RewriteStmt(result);
@@ -76,14 +76,16 @@ namespace Stonylang_CSharp.Lowering
         {
             BoundVariableStmt variableDecl = new(node.Variable, node.InitialValue);
             BoundVariableExpr variableExpr = new(node.Variable);
+            VariableSymbol upperBoundSymbol = new("upperBound", typeof(int), null, null, true);
+            BoundVariableStmt upperBoundDecl = new(upperBoundSymbol, node.Range);
 
-            BoundBinaryExpr condition = new(variableExpr, BoundBinaryOperator.Bind(SyntaxKind.LessEq, typeof(int), typeof(int)), node.Range);
+            BoundBinaryExpr condition = new(variableExpr, BoundBinaryOperator.Bind(SyntaxKind.LessEq, typeof(int), typeof(int)), new BoundVariableExpr(upperBoundSymbol));
             BoundExpressionStmt increment = new(new BoundAssignmentExpr(node.Variable,
                 new BoundBinaryExpr(variableExpr, BoundBinaryOperator.Bind(SyntaxKind.Plus, typeof(int), typeof(int)), new BoundLiteralExpr(1))));
 
-            BoundBlockStmt whileBlock = new(ImmutableArray.Create<BoundStmt>(node.Stmt, increment));
-            BoundWhileStmt whileStmt = new(condition, whileBlock, false);
-            BoundBlockStmt result = new(ImmutableArray.Create<BoundStmt>(variableDecl, whileStmt));
+            BoundBlockStmt whileBody = new(ImmutableArray.Create<BoundStmt>(node.Stmt, increment));
+            BoundWhileStmt whileStmt = new(condition, whileBody, false);
+            BoundBlockStmt result = new(ImmutableArray.Create<BoundStmt>(variableDecl, upperBoundDecl, whileStmt));
             return RewriteStmt(result);
         }
     }

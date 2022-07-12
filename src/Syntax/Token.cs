@@ -1,9 +1,9 @@
-﻿using Stonylang_CSharp.Parser;
-using Stonylang_CSharp.Utility;
+﻿using Stonylang.Parser;
+using Stonylang.Utility;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Stonylang_CSharp.Lexer
+namespace Stonylang.Lexer
 {
     public enum SyntaxKind
     {
@@ -34,9 +34,9 @@ namespace Stonylang_CSharp.Lexer
         Number, String, Identifier,
 
         // Keywords
-        Fn, Class, If, Else, Switch, Case, Default,
-        Var, Mut, Break, Continue, True, False, Return,
-        While, Do, For, ForEach, Async, Await, GoTo, To,
+        FnKeyword, ClassKeyword, IfKeyword, ElseKeyword, SwitchKeyword, CaseKeyword, DefaultKeyword,
+        VarKeyword, MutKeyword, BreakKeyword, ContinueKeyword, TrueKeyword, FalseKeyword, ReturnKeyword,
+        WhileKeyword, DoKeyword, ForKeyword, AsyncKeyword, AwaitKeyword, GoToKeyword, ToKeyword,
 
         // Others
         Semicolon, Comma, LParen, RParen, LBrace, RBrace,

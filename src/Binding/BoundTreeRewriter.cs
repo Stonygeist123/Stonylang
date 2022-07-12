@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Immutable;
 
-namespace Stonylang_CSharp.Binding
+namespace Stonylang.Binding
 {
     internal abstract class BoundTreeRewriter
     {
@@ -101,7 +101,7 @@ namespace Stonylang_CSharp.Binding
             BoundExpr condition = RewriteExpr(node.Condition);
             if (condition == node.Condition)
                 return node;
-            return new BoundConditionalGoToStmt(node.Label, condition, node.JumpIfFalse);
+            return new BoundConditionalGoToStmt(node.Label, condition, node.JumpIfTrue);
         }
 
         protected virtual BoundStmt RewriteExpressionStmt(BoundExpressionStmt node)

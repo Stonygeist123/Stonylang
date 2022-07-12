@@ -1,11 +1,11 @@
-﻿using Stonylang_CSharp.Lexer;
-using Stonylang_CSharp.Parser;
-using Stonylang_CSharp.Utility;
+﻿using Stonylang.Lexer;
+using Stonylang.Parser;
+using Stonylang.Utility;
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 
-namespace Stonylang_CSharp.Binding
+namespace Stonylang.Binding
 {
     internal sealed class BoundUnaryOperator
     {

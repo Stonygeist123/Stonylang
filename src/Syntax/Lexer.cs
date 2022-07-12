@@ -1,7 +1,7 @@
-﻿using Stonylang_CSharp.SyntaxFacts;
-using Stonylang_CSharp.Utility;
+﻿using Stonylang.SyntaxFacts;
+using Stonylang.Utility;
 
-namespace Stonylang_CSharp.Lexer
+namespace Stonylang.Lexer
 {
     internal sealed class Lexer
     {
@@ -295,6 +295,6 @@ namespace Stonylang_CSharp.Lexer
             return new Token(_kind, _kind.GetText() ?? _source.ToString()[_start.._position], _value, new(_start, _position - _start), _line);
         }
 
-        private int Advance() => ++_position;
+        private void Advance() => ++_position;
     }
 }

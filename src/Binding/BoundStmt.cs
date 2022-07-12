@@ -1,7 +1,7 @@
-﻿using Stonylang_CSharp.Utility;
+﻿using Stonylang.Utility;
 using System.Collections.Immutable;
 
-namespace Stonylang_CSharp.Binding
+namespace Stonylang.Binding
 {
     internal abstract class BoundStmt : BoundNode { }
 
@@ -88,17 +88,17 @@ namespace Stonylang_CSharp.Binding
 
     internal sealed class BoundConditionalGoToStmt : BoundStmt
     {
-        public BoundConditionalGoToStmt(LabelSymbol label, BoundExpr condition, bool jumpIfFalse = false)
+        public BoundConditionalGoToStmt(LabelSymbol label, BoundExpr condition, bool jumpIfTrue = false)
         {
             Label = label;
             Condition = condition;
-            JumpIfFalse = jumpIfFalse;
+            JumpIfTrue = jumpIfTrue;
         }
 
         public override BoundNodeKind Kind => BoundNodeKind.ConditionalGoToStatement;
         public LabelSymbol Label { get; }
         public BoundExpr Condition { get; }
-        public bool JumpIfFalse { get; }
+        public bool JumpIfTrue { get; }
     }
 
     internal sealed class BoundLabelStmt : BoundStmt

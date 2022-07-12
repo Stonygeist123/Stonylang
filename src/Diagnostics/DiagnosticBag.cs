@@ -1,7 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 
-namespace Stonylang_CSharp.Utility
+namespace Stonylang.Utility
 {
     public sealed class DiagnosticBag : IEnumerable<Diagnostic>
     {

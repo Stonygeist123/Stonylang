@@ -1,12 +1,12 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using Stonylang_CSharp.Utility;
-using Stonylang_CSharp.Lexer;
-using Stonylang_CSharp.SyntaxFacts;
+using Stonylang.Utility;
+using Stonylang.Lexer;
+using Stonylang.SyntaxFacts;
 using System.Collections.Immutable;
 using System;
 
-namespace Stonylang_CSharp.Parser
+namespace Stonylang.Parser
 {
     internal sealed class Parser
     {
@@ -38,10 +38,10 @@ namespace Stonylang_CSharp.Parser
             return Current.Kind switch
             {
                 SyntaxKind.LBrace => ParseBlockStmt(),
-                SyntaxKind.Var => ParseVariableStmt(),
-                SyntaxKind.If => ParseIfStmt(),
-                SyntaxKind.Do or SyntaxKind.While => ParseWhileStmt(),
-                SyntaxKind.For => ParseForStmt(),
+                SyntaxKind.VarKeyword => ParseVariableStmt(),
+                SyntaxKind.IfKeyword => ParseIfStmt(),
+                SyntaxKind.DoKeyword or SyntaxKind.WhileKeyword => ParseWhileStmt(),
+                SyntaxKind.ForKeyword => ParseForStmt(),
                 _ => ParseExpressionStmt()
             };
         }
@@ -64,7 +64,7 @@ namespace Stonylang_CSharp.Parser
         private VariableStmt ParseVariableStmt()
         {
             Token varKeyword = Advance();
-            Token mutKeyword = Current.Kind == SyntaxKind.Mut ? Match(SyntaxKind.Mut) : null;
+            Token mutKeyword = Current.Kind == SyntaxKind.MutKeyword ? Match(SyntaxKind.MutKeyword) : null;
             Token identifier = Match(SyntaxKind.Identifier);
             Match(SyntaxKind.Equals);
             ExprNode initializr = ParseExpression();
@@ -73,35 +73,35 @@ namespace Stonylang_CSharp.Parser
 
         private IfStmt ParseIfStmt()
         {
-            Token keyword = Match(SyntaxKind.If);
+            Token keyword = Match(SyntaxKind.IfKeyword);
             ExprNode condition = ParseExpression();
             BlockStmt thenBranch = ParseBlockStmt();
-            ElseClauseStmt elseBranch = Current.Kind == SyntaxKind.Else ? new(Match(SyntaxKind.Else), ParseBlockStmt()) : null;
+            ElseClauseStmt elseBranch = Current.Kind == SyntaxKind.ElseKeyword ? new(Match(SyntaxKind.ElseKeyword), ParseBlockStmt()) : null;
             return new(keyword, condition, thenBranch, elseBranch);
         }
 
         private WhileStmt ParseWhileStmt()
         {
-            bool isDoWhile = Current.Kind == SyntaxKind.Do;
+            bool isDoWhile = Current.Kind == SyntaxKind.DoKeyword;
             if (isDoWhile)
             {
-                Match(SyntaxKind.Do);
+                Match(SyntaxKind.DoKeyword);
                 BlockStmt thenBranch = ParseBlockStmt();
-                Token keyword = Match(SyntaxKind.While);
+                Token keyword = Match(SyntaxKind.WhileKeyword);
                 return new(keyword, ParseExpression(), thenBranch, isDoWhile);
             }
-            return new(Match(SyntaxKind.While), Current.Kind == SyntaxKind.LBrace ? null : ParseExpression(), ParseBlockStmt(), isDoWhile);
+            return new(Match(SyntaxKind.WhileKeyword), Current.Kind == SyntaxKind.LBrace ? null : ParseExpression(), ParseBlockStmt(), isDoWhile);
         }
 
         private ForStmt ParseForStmt()
         {
-            Token keyword = Match(SyntaxKind.For);
-            bool isMut = Current.Kind == SyntaxKind.Mut;
-            if (isMut) Match(SyntaxKind.Mut);
+            Token keyword = Match(SyntaxKind.ForKeyword);
+            bool isMut = Current.Kind == SyntaxKind.MutKeyword;
+            if (isMut) Match(SyntaxKind.MutKeyword);
             Token identifier = Match(SyntaxKind.Identifier);
             Match(SyntaxKind.Equals);
             ExprNode initialValue = ParseExpression();
-            Match(SyntaxKind.To);
+            Match(SyntaxKind.ToKeyword);
             ExprNode range = ParseExpression();
             BlockStmt stmt = ParseBlockStmt();
             return new(keyword, identifier, isMut, initialValue, range, stmt);
@@ -180,11 +180,11 @@ namespace Stonylang_CSharp.Parser
                         Match(SyntaxKind.RParen);
                         return expr;
                     }
-                case SyntaxKind.True:
-                case SyntaxKind.False:
+                case SyntaxKind.TrueKeyword:
+                case SyntaxKind.FalseKeyword:
                     {
-                        bool isTrue = Current.Kind == SyntaxKind.True;
-                        Token kw = isTrue ? Match(SyntaxKind.True) : Match(SyntaxKind.False);
+                        bool isTrue = Current.Kind == SyntaxKind.TrueKeyword;
+                        Token kw = isTrue ? Match(SyntaxKind.TrueKeyword) : Match(SyntaxKind.FalseKeyword);
                         return new LiteralExpr(kw, isTrue);
                     }
                 case SyntaxKind.Identifier:

@@ -1,6 +1,6 @@
-﻿using Stonylang_CSharp.Binding;
-using Stonylang_CSharp.Lowering;
-using Stonylang_CSharp.Utility;
+﻿using Stonylang.Binding;
+using Stonylang.Lowering;
+using Stonylang.Utility;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -8,7 +8,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 
-namespace Stonylang_CSharp.Evaluator
+namespace Stonylang.Evaluator
 {
     public class Compilation
     {
@@ -45,19 +45,12 @@ namespace Stonylang_CSharp.Evaluator
         public Compilation ContinueWith(SyntaxTree.SyntaxTree syntax, SourceText source) => new(this, syntax, source);
         public EvaluationResult Evaluate(Dictionary<string, VariableSymbol> symbolTable)
         {
-            var binderWatch = Stopwatch.StartNew();
-            binderWatch.Stop();
-            Console.WriteLine("TypeChecking: " + binderWatch.ElapsedMilliseconds + "ms");
-
             DiagnosticBag diagnostics = Syntax.Diagnostics.AddRange(GlobalScope.Diagnostics);
             if (diagnostics.Any()) return new EvaluationResult(diagnostics, null);
 
             BoundBlockStmt stmt = GetStatement();
-            Stopwatch evaluationWatch = Stopwatch.StartNew();
             Evaluator evaluator = new(stmt, symbolTable);
             object value = evaluator.Evaluate();
-            evaluationWatch.Stop();
-            Console.WriteLine("Evaluating: " + evaluationWatch.ElapsedMilliseconds + "ms\n");
             return new EvaluationResult(new(), value);
         }
 

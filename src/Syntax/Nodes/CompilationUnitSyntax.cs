@@ -1,6 +1,6 @@
-﻿using Stonylang_CSharp.Lexer;
+﻿using Stonylang.Lexer;
 
-namespace Stonylang_CSharp.Parser
+namespace Stonylang.Parser
 {
     public sealed class CompilationUnitSyntax : Node
     {

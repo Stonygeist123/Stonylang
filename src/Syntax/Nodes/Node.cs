@@ -1,12 +1,12 @@
-﻿using Stonylang_CSharp.Lexer;
-using Stonylang_CSharp.SyntaxFacts;
-using Stonylang_CSharp.Utility;
+﻿using Stonylang.Lexer;
+using Stonylang.SyntaxFacts;
+using Stonylang.Utility;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 
-namespace Stonylang_CSharp.Parser
+namespace Stonylang.Parser
 {
     public abstract class Node
     {

@@ -1,9 +1,9 @@
-﻿using Stonylang_CSharp.Binding;
+﻿using Stonylang.Binding;
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 
-namespace Stonylang_CSharp.Utility
+namespace Stonylang.Utility
 {
     public enum LogLevel
     {
@@ -20,6 +20,7 @@ namespace Stonylang_CSharp.Utility
 
         public int Start { get; }
         public int Length { get; }
+
         public int End => Start + Length;
         public static TextSpan FromRounds(int start, int end) => new(start, end - start);
         public override string ToString() => $"{Start}..{End}";
@@ -128,7 +129,7 @@ namespace Stonylang_CSharp.Utility
         }
         private static int GetLineBreakWidth(string text, int position)
         {
-            char c = text[Math.Clamp(position, 0, text.Length - 1)];
+            char c = text[Math.Clamp(position, 0, Math.Clamp(text.Length - 1, 0, text.Length - 1))];
             int l = position + 1 >= text.Length ? '\0' : text[position + 1];
             if (c == '\r' && l == '\n') return 2;
             else if (c == '\r' || c == '\n') return 1;
