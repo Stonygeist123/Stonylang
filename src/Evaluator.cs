@@ -1,4 +1,5 @@
 ﻿using Stonylang.Binding;
+using Stonylang.Symbols;
 using Stonylang.Utility;
 using System;
 using System.Collections.Generic;
@@ -32,7 +33,7 @@ namespace Stonylang.Evaluator
 
         public object Evaluate()
         {
-            Dictionary<LabelSymbol, int> labelToIndex = new();
+            Dictionary<BoundLabel, int> labelToIndex = new();
             for (int i = 0; i < _root.Statements.Length; ++i)
                 if (_root.Statements[i] is BoundLabelStmt l)
                     labelToIndex.Add(l.Label, i + 1);
@@ -101,24 +102,23 @@ namespace Stonylang.Evaluator
                 case BoundUnaryExpr u:
                     {
                         object operand = EvaluateExpression(u.Operand);
-                        if (operand is int @iOperand)
-                            return u.Op.OpKind switch
+                        return operand switch
+                        {
+                            int @iOperand => u.Op.OpKind switch
                             {
                                 BoundUnaryOpKind.Identity => iOperand,
                                 BoundUnaryOpKind.Negation => -iOperand,
                                 BoundUnaryOpKind.LogicalNegation => Enumerable.Range(1, iOperand).Aggregate(1, (p, i) => p * i),
                                 BoundUnaryOpKind.Inv => ~iOperand,
                                 _ => throw new Exception($"Unexpected unary operator <{u.Op}>.")
-                            };
-
-                        if (operand is bool @bOperand)
-                            return u.Op.OpKind switch
+                            },
+                            bool @bOperand => u.Op.OpKind switch
                             {
                                 BoundUnaryOpKind.LogicalNegation => !bOperand,
                                 _ => throw new Exception($"Unexpected unary operator <{u.Op}>.")
-                            };
-
-                        break;
+                            },
+                            _ => throw new Exception($"Unexpected unary operator <{u.Op}>."),
+                        };
                     }
 
                 case BoundBinaryExpr b:
@@ -126,43 +126,88 @@ namespace Stonylang.Evaluator
                         object left = EvaluateExpression(b.Left);
                         object right = EvaluateExpression(b.Right);
 
-                        if (left is int @liO && right is int @riO)
-                            return b.Op.OpKind switch
+                        return left switch
+                        {
+                            // left is int
+                            int @liO => right switch
                             {
-                                BoundBinaryOpKind.Addition => liO + riO,
-                                BoundBinaryOpKind.Subtraction => liO - riO,
-                                BoundBinaryOpKind.Multiplication => liO * riO,
-                                BoundBinaryOpKind.Division => liO / riO,
-                                BoundBinaryOpKind.Power => (int)Math.Pow(liO, riO),
-                                BoundBinaryOpKind.Modulo => liO % riO,
-                                BoundBinaryOpKind.LogicalEq => liO == riO,
-                                BoundBinaryOpKind.LogicalNotEq => liO != riO,
-                                BoundBinaryOpKind.Greater => liO > riO,
-                                BoundBinaryOpKind.GreaterEq => liO >= riO,
-                                BoundBinaryOpKind.Less => liO < riO,
-                                BoundBinaryOpKind.LessEq => liO <= riO,
-                                BoundBinaryOpKind.Rsh => liO >> riO,
-                                BoundBinaryOpKind.Lsh => liO << riO,
-                                BoundBinaryOpKind.BitwiseAnd => liO & riO,
-                                BoundBinaryOpKind.BitwiseOr => liO | riO,
-                                BoundBinaryOpKind.BitwiseXor => liO ^ riO,
-                                _ => throw new Exception($"Unexpected binary operator <{b.Op.Kind}> for type {left.GetType()}.")
-                            };
+                                int @riO => b.Op.OpKind switch
+                                {
+                                    BoundBinaryOpKind.Addition => liO + riO,
+                                    BoundBinaryOpKind.Subtraction => liO - riO,
+                                    BoundBinaryOpKind.Multiplication => liO * riO,
+                                    BoundBinaryOpKind.Division => liO / riO,
+                                    BoundBinaryOpKind.Power => (int)Math.Pow(liO, riO),
+                                    BoundBinaryOpKind.Modulo => liO % riO,
+                                    BoundBinaryOpKind.LogicalEq => liO == riO,
+                                    BoundBinaryOpKind.LogicalNotEq => liO != riO,
+                                    BoundBinaryOpKind.Greater => liO > riO,
+                                    BoundBinaryOpKind.GreaterEq => liO >= riO,
+                                    BoundBinaryOpKind.Less => liO < riO,
+                                    BoundBinaryOpKind.LessEq => liO <= riO,
+                                    BoundBinaryOpKind.Rsh => liO >> riO,
+                                    BoundBinaryOpKind.Lsh => liO << riO,
+                                    BoundBinaryOpKind.BitwiseAnd => liO & riO,
+                                    BoundBinaryOpKind.BitwiseOr => liO | riO,
+                                    BoundBinaryOpKind.BitwiseXor => liO ^ riO,
+                                    _ => throw new Exception($"Unexpected binary operator <{b.Op.Kind}> for type {left.GetType()}.")
+                                },
+                                string @rsO => b.Op.OpKind switch
+                                {
+                                    BoundBinaryOpKind.Addition => liO + rsO,
+                                    _ => throw new Exception($"Unexpected binary operator <{b.Op}> for type {left.GetType()}.")
+                                },
+                                _ => throw new Exception($"Unexpected binary operator <{b.Op}> for type {left.GetType()}."),
+                            },
 
-                        if (left is bool @lbO && right is bool @rbO)
-                            return b.Op.OpKind switch
+                            // left is bool
+                            bool @lbO => right switch
                             {
-                                BoundBinaryOpKind.LogicalAnd => lbO && rbO,
-                                BoundBinaryOpKind.LogicalOr => lbO || rbO,
-                                BoundBinaryOpKind.LogicalEq => lbO == rbO,
-                                BoundBinaryOpKind.LogicalNotEq => lbO != rbO,
-                                BoundBinaryOpKind.BitwiseAnd => lbO & rbO,
-                                BoundBinaryOpKind.BitwiseOr => lbO | rbO,
-                                BoundBinaryOpKind.BitwiseXor => lbO ^ rbO,
-                                _ => throw new Exception($"Unexpected binary operator <{b.Op}> for type {left.GetType()}.")
-                            };
+                                bool @rbO => b.Op.OpKind switch
+                                {
+                                    BoundBinaryOpKind.LogicalAnd => lbO && rbO,
+                                    BoundBinaryOpKind.LogicalOr => lbO || rbO,
+                                    BoundBinaryOpKind.LogicalEq => lbO == rbO,
+                                    BoundBinaryOpKind.LogicalNotEq => lbO != rbO,
+                                    BoundBinaryOpKind.BitwiseAnd => lbO & rbO,
+                                    BoundBinaryOpKind.BitwiseOr => lbO | rbO,
+                                    BoundBinaryOpKind.BitwiseXor => lbO ^ rbO,
+                                    _ => throw new Exception($"Unexpected binary operator <{b.Op}> for type {left.GetType()}.")
+                                },
+                                string @rsO => b.Op.OpKind switch
+                                {
+                                    BoundBinaryOpKind.Addition => lbO + rsO,
+                                    _ => throw new Exception($"Unexpected binary operator <{b.Op}> for type {left.GetType()}.")
+                                },
+                                _ => throw new Exception($"Unexpected binary operator <{b.Op}> for type {left.GetType()}."),
+                            },
 
-                        break;
+                            // left is string
+                            string @lsO => right switch
+                            {
+                                string @rsO => b.Op.OpKind switch
+                                {
+                                    BoundBinaryOpKind.Addition => lsO + rsO,
+                                    BoundBinaryOpKind.LogicalEq => lsO == rsO,
+                                    BoundBinaryOpKind.LogicalNotEq => lsO != rsO,
+                                    _ => throw new Exception($"Unexpected binary operator <{b.Op}> for type {left.GetType()}.")
+                                },
+                                int @riO => b.Op.OpKind switch
+                                {
+                                    BoundBinaryOpKind.Addition => lsO + riO,
+                                    BoundBinaryOpKind.Subtraction => riO == Math.Abs(riO) ? lsO.Substring(0, lsO.Length - riO) : lsO + Math.Abs(riO),
+                                    BoundBinaryOpKind.Multiplication => string.Concat(Enumerable.Repeat(lsO, riO)),
+                                    _ => throw new Exception($"Unexpected binary operator <{b.Op}> for type {left.GetType()}.")
+                                },
+                                bool @rbO => b.Op.OpKind switch
+                                {
+                                    BoundBinaryOpKind.Addition => lsO + (rbO ? "true" : "false"),
+                                    _ => throw new Exception($"Unexpected binary operator <{b.Op}> for type {left.GetType()}.")
+                                },
+                                _ => throw new Exception($"Unexpected binary operator <{b.Op}> for type {left.GetType()}."),
+                            },
+                            _ => throw new Exception($"Unexpected binary operator <{b.Op}> for type {left.GetType()}."),
+                        };
                     }
             }
 

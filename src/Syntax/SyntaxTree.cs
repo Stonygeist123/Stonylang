@@ -26,18 +26,29 @@ namespace Stonylang.SyntaxTree
 
         public static SyntaxTree Parse(SourceText source) => new SyntaxTree(source);
         public static SyntaxTree Parse(string source) => Parse(SourceText.From(source));
-        public static IEnumerable<Token> ParseTokens(string source)
+        public static ImmutableArray<Token> ParseTokens(string source) => ParseTokens(source, out _);
+        public static ImmutableArray<Token> ParseTokens(string source, out DiagnosticBag diagnostics)
         {
             if (!string.IsNullOrWhiteSpace(source))
             {
-                Lexer.Lexer lexer = new(SourceText.From(source));
-                while (true)
+                static IEnumerable<Token> LexTokens(Lexer.Lexer lexer)
                 {
-                    Token token = lexer.Lex();
-                    if (token.Kind == SyntaxKind.EOF) break;
-                    yield return token;
+                    while (true)
+                    {
+                        Token token = lexer.Lex();
+                        if (token.Kind == SyntaxKind.EOF) break;
+                        yield return token;
+                    }
                 }
+
+                Lexer.Lexer lexer = new(SourceText.From(source));
+                ImmutableArray<Token> result = LexTokens(lexer).ToImmutableArray();
+                diagnostics = lexer.Diagnostics;
+                return result;
             }
+
+            diagnostics = null;
+            return ImmutableArray<Token>.Empty;
         }
     }
 }

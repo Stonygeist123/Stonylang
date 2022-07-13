@@ -1,5 +1,6 @@
 ﻿using Stonylang.Binding;
 using Stonylang.Lexer;
+using Stonylang.Symbols;
 using Stonylang.Utility;
 using System;
 using System.Collections.Generic;
@@ -13,7 +14,7 @@ namespace Stonylang.Lowering
         private int _labelCount;
         private Lowerer() { }
         public static BoundBlockStmt Lower(BoundStmt stmt) => Flatten(new Lowerer().RewriteStmt(stmt));
-        private LabelSymbol GenerateLabel() => new($"Label{++_labelCount}");
+        private BoundLabel GenerateLabel() => new($"Label{++_labelCount}");
 
         private static BoundBlockStmt Flatten(BoundStmt stmt)
         {
@@ -37,7 +38,7 @@ namespace Stonylang.Lowering
         {
             if (node.ElseBranch == null)
             {
-                LabelSymbol endLabel = GenerateLabel();
+                BoundLabel endLabel = GenerateLabel();
                 BoundConditionalGoToStmt gotoFalse = new(endLabel, node.Condition, false);
                 BoundLabelStmt endLabelStmt = new(endLabel);
                 BoundBlockStmt result = new(ImmutableArray.Create<BoundStmt>(gotoFalse, node.ThenBranch, endLabelStmt));
@@ -45,8 +46,8 @@ namespace Stonylang.Lowering
             }
             else
             {
-                LabelSymbol elseLabel = GenerateLabel();
-                LabelSymbol endLabel = GenerateLabel();
+                BoundLabel elseLabel = GenerateLabel();
+                BoundLabel endLabel = GenerateLabel();
 
                 BoundConditionalGoToStmt gotoFalse = new(elseLabel, node.Condition, false);
                 BoundGoToStmt gotoEndStmt = new(endLabel);
@@ -59,9 +60,9 @@ namespace Stonylang.Lowering
 
         protected override BoundStmt RewriteWhileStmt(BoundWhileStmt node)
         {
-            LabelSymbol continueLabel = GenerateLabel();
-            LabelSymbol checkLabel = GenerateLabel();
-            LabelSymbol endLabel = GenerateLabel();
+            BoundLabel continueLabel = GenerateLabel();
+            BoundLabel checkLabel = GenerateLabel();
+            BoundLabel endLabel = GenerateLabel();
 
             BoundGoToStmt gotoCheck = new(checkLabel);
             BoundLabelStmt continueLabelStmt = new(continueLabel);
@@ -76,12 +77,12 @@ namespace Stonylang.Lowering
         {
             BoundVariableStmt variableDecl = new(node.Variable, node.InitialValue);
             BoundVariableExpr variableExpr = new(node.Variable);
-            VariableSymbol upperBoundSymbol = new("upperBound", typeof(int), null, null, true);
+            VariableSymbol upperBoundSymbol = new("upperBound", TypeSymbol.Int, null, null, true);
             BoundVariableStmt upperBoundDecl = new(upperBoundSymbol, node.Range);
 
-            BoundBinaryExpr condition = new(variableExpr, BoundBinaryOperator.Bind(SyntaxKind.LessEq, typeof(int), typeof(int)), new BoundVariableExpr(upperBoundSymbol));
+            BoundBinaryExpr condition = new(variableExpr, BoundBinaryOperator.Bind(SyntaxKind.LessEq, TypeSymbol.Int, TypeSymbol.Int), new BoundVariableExpr(upperBoundSymbol));
             BoundExpressionStmt increment = new(new BoundAssignmentExpr(node.Variable,
-                new BoundBinaryExpr(variableExpr, BoundBinaryOperator.Bind(SyntaxKind.Plus, typeof(int), typeof(int)), new BoundLiteralExpr(1))));
+                new BoundBinaryExpr(variableExpr, BoundBinaryOperator.Bind(SyntaxKind.Plus, TypeSymbol.Int, TypeSymbol.Int), new BoundLiteralExpr(1))));
 
             BoundBlockStmt whileBody = new(ImmutableArray.Create<BoundStmt>(node.Stmt, increment));
             BoundWhileStmt whileStmt = new(condition, whileBody, false);

@@ -1,14 +1,13 @@
 ﻿using Stonylang.Evaluator;
+using Stonylang.Lexer;
+using Stonylang.Symbols;
 using Stonylang.Utility;
 using System;
-using System.Collections.ObjectModel;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
+using System.Collections.Immutable;
+using System.Collections.ObjectModel;
 using System.Collections.Specialized;
-using Stonylang.Lexer;
-using Stonylang.SyntaxFacts;
-using Stonylang.Parser;
+using System.Linq;
 
 namespace Stonylang
 {
@@ -353,11 +352,7 @@ namespace Stonylang
             ++view.CurrentCharacter;
         }
 
-        protected virtual void RenderLine(string line)
-        {
-            Console.Write(line);
-        }
-
+        protected virtual void RenderLine(string line) => Console.Write(line);
         protected void ClearHistory() => _submissionHistory.Clear();
         protected abstract void EvaluateMetaCommand(string input);
         protected abstract bool IsCompleteSubmission(string text);
@@ -372,22 +367,25 @@ namespace Stonylang
 
         protected override void RenderLine(string line)
         {
-            IEnumerable<Token> tokens = SyntaxTree.SyntaxTree.ParseTokens(line);
-            foreach (Token token in tokens)
-            {
-                bool isKeyword = token.Kind.ToString()?.EndsWith("Keyword") ?? false;
-                bool isNumber = token.Kind == SyntaxKind.Number;
-                bool isIdentifier = token.Kind == SyntaxKind.Identifier;
-                if (isKeyword)
-                    Console.ForegroundColor = ConsoleColor.Blue;
-                else if (isIdentifier)
-                    Console.ForegroundColor = ConsoleColor.DarkYellow;
-                else if (!isNumber)
-                    Console.ForegroundColor = ConsoleColor.DarkGray;
+            ImmutableArray<Token> tokens = SyntaxTree.SyntaxTree.ParseTokens(line);
+            if (!tokens.IsDefaultOrEmpty)
+                foreach (Token token in tokens)
+                {
+                    bool isKeyword = token.Kind.ToString().EndsWith("Keyword");
+                    bool isNumber = token.Kind == SyntaxKind.Number;
+                    bool isIdentifier = token.Kind == SyntaxKind.Identifier;
+                    if (isKeyword)
+                        Console.ForegroundColor = ConsoleColor.Blue;
+                    else if (isIdentifier)
+                        Console.ForegroundColor = ConsoleColor.DarkYellow;
+                    else if (isNumber)
+                        Console.ForegroundColor = ConsoleColor.Cyan;
+                    else
+                        Console.ForegroundColor = ConsoleColor.DarkGray;
 
-                Console.Write(token.Lexeme);
-                Console.ResetColor();
-            }
+                    Console.Write(token.Lexeme);
+                    Console.ResetColor();
+                }
         }
 
         protected override bool IsCompleteSubmission(string text)
@@ -395,11 +393,17 @@ namespace Stonylang
             if (string.IsNullOrEmpty(text))
                 return true;
 
-            SyntaxTree.SyntaxTree syntaxTree = SyntaxTree.SyntaxTree.Parse(text);
-            return !GetLastToken(syntaxTree.Root.Statement).IsMissing;
-        }
+            bool lastTwoLinesAreBlank = text.Split(Environment.NewLine)
+                .Reverse()
+                .TakeWhile(s => string.IsNullOrEmpty(s))
+                .Take(2)
+                .Count() == 2;
+            if (lastTwoLinesAreBlank)
+                return true;
 
-        private Token GetLastToken(Node node) => node is Token t ? t : GetLastToken(node.GetChildren().Last());
+            SyntaxTree.SyntaxTree syntaxTree = SyntaxTree.SyntaxTree.Parse(text);
+            return !syntaxTree.Diagnostics.Any();//.Root.Statement.GetLastToken().IsMissing;
+        }
         protected override void EvaluateMetaCommand(string input)
         {
             switch (input.ToLower())

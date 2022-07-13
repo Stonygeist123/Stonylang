@@ -1,5 +1,6 @@
 ﻿using Stonylang.Lexer;
 using Stonylang.Parser;
+using Stonylang.Symbols;
 using Stonylang.Utility;
 using System;
 using System.Collections.Generic;
@@ -9,9 +10,9 @@ namespace Stonylang.Binding
 {
     internal sealed class BoundUnaryOperator
     {
-        private BoundUnaryOperator(SyntaxKind kind, BoundUnaryOpKind opKind, Type operandType)
+        private BoundUnaryOperator(SyntaxKind kind, BoundUnaryOpKind opKind, TypeSymbol operandType)
             : this(kind, opKind, operandType, operandType) { }
-        private BoundUnaryOperator(SyntaxKind kind, BoundUnaryOpKind opKind, Type operandType, Type resultType)
+        private BoundUnaryOperator(SyntaxKind kind, BoundUnaryOpKind opKind, TypeSymbol operandType, TypeSymbol resultType)
         {
             Kind = kind;
             OpKind = opKind;
@@ -21,35 +22,36 @@ namespace Stonylang.Binding
 
         public SyntaxKind Kind { get; }
         public BoundUnaryOpKind OpKind { get; }
-        public Type OperandType { get; }
-        public Type ResultType { get; }
+        public TypeSymbol OperandType { get; }
+        public TypeSymbol ResultType { get; }
 
         private static readonly BoundUnaryOperator[] _operators =
         {
-            new(SyntaxKind.Not, BoundUnaryOpKind.LogicalNegation, typeof(bool)),
-            new(SyntaxKind.Not, BoundUnaryOpKind.LogicalNegation, typeof(int)),
-            new(SyntaxKind.Plus, BoundUnaryOpKind.Identity, typeof(int)),
-            new(SyntaxKind.Minus, BoundUnaryOpKind.Negation, typeof(int)),
-            new(SyntaxKind.Inv, BoundUnaryOpKind.Inv, typeof(int)),
-            new(SyntaxKind.Increment, BoundUnaryOpKind.Increment, typeof(int)),
-            new(SyntaxKind.Decrement, BoundUnaryOpKind.Decrement, typeof(int))
+            new(SyntaxKind.Not, BoundUnaryOpKind.LogicalNegation, TypeSymbol.Bool),
+            new(SyntaxKind.Not, BoundUnaryOpKind.LogicalNegation, TypeSymbol.Int),
+            new(SyntaxKind.Plus, BoundUnaryOpKind.Identity, TypeSymbol.Int),
+            new(SyntaxKind.Minus, BoundUnaryOpKind.Negation, TypeSymbol.Int),
+            new(SyntaxKind.Inv, BoundUnaryOpKind.Inv, TypeSymbol.Int),
+            new(SyntaxKind.Increment, BoundUnaryOpKind.Increment, TypeSymbol.Int),
+            new(SyntaxKind.Decrement, BoundUnaryOpKind.Decrement, TypeSymbol.Int)
         };
 
-        public static BoundUnaryOperator Bind(SyntaxKind kind, Type operandType)
+        public static BoundUnaryOperator Bind(SyntaxKind kind, TypeSymbol operandType)
         {
-            foreach (var op in _operators)
-                if (op.Kind == kind && op.OperandType == operandType) return op;
+            foreach (BoundUnaryOperator op in _operators)
+                if (op.Kind == kind && op.OperandType == operandType)
+                    return op;
             return null;
         }
     }
 
     internal sealed class BoundBinaryOperator
     {
-        private BoundBinaryOperator(SyntaxKind kind, BoundBinaryOpKind opKind, Type type)
+        private BoundBinaryOperator(SyntaxKind kind, BoundBinaryOpKind opKind, TypeSymbol type)
             : this(kind, opKind, type, type, type) { }
-        private BoundBinaryOperator(SyntaxKind kind, BoundBinaryOpKind opKind, Type operandType, Type type)
+        private BoundBinaryOperator(SyntaxKind kind, BoundBinaryOpKind opKind, TypeSymbol operandType, TypeSymbol type)
             : this(kind, opKind, operandType, operandType, type) { }
-        private BoundBinaryOperator(SyntaxKind kind, BoundBinaryOpKind opKind, Type leftType, Type rightType, Type resultType)
+        private BoundBinaryOperator(SyntaxKind kind, BoundBinaryOpKind opKind, TypeSymbol leftType, TypeSymbol rightType, TypeSymbol resultType)
         {
             Kind = kind;
             OpKind = opKind;
@@ -60,46 +62,63 @@ namespace Stonylang.Binding
 
         public SyntaxKind Kind { get; }
         public BoundBinaryOpKind OpKind { get; }
-        public Type LeftType { get; }
-        public Type RightType { get; }
-        public Type ResultType { get; }
+        public TypeSymbol LeftType { get; }
+        public TypeSymbol RightType { get; }
+        public TypeSymbol ResultType { get; }
 
         private static readonly BoundBinaryOperator[] _operators =
         {
-            // int
-            new(SyntaxKind.Plus, BoundBinaryOpKind.Addition, typeof(int)),
-            new(SyntaxKind.Minus, BoundBinaryOpKind.Subtraction, typeof(int)),
-            new(SyntaxKind.Star, BoundBinaryOpKind.Multiplication, typeof(int)),
-            new(SyntaxKind.Slash, BoundBinaryOpKind.Division, typeof(int)),
-            new(SyntaxKind.Power, BoundBinaryOpKind.Power, typeof(int)),
-            new(SyntaxKind.Mod, BoundBinaryOpKind.Modulo, typeof(int)),
-            new(SyntaxKind.Or, BoundBinaryOpKind.BitwiseOr, typeof(int)),
-            new(SyntaxKind.And, BoundBinaryOpKind.BitwiseAnd, typeof(int)),
-            new(SyntaxKind.Xor, BoundBinaryOpKind.BitwiseXor, typeof(int)),
-            new(SyntaxKind.Rsh, BoundBinaryOpKind.Rsh, typeof(int)),
-            new(SyntaxKind.Lsh, BoundBinaryOpKind.Lsh, typeof(int)),
-
-            new(SyntaxKind.EqEq, BoundBinaryOpKind.LogicalEq, typeof(int), typeof(bool)),
-            new(SyntaxKind.NotEq, BoundBinaryOpKind.LogicalNotEq, typeof(int), typeof(bool)),
-            new(SyntaxKind.Greater, BoundBinaryOpKind.Greater, typeof(int), typeof(bool)),
-            new(SyntaxKind.GreaterEq, BoundBinaryOpKind.GreaterEq, typeof(int), typeof(bool)),
-            new(SyntaxKind.Less, BoundBinaryOpKind.Less, typeof(int), typeof(bool)),
-            new(SyntaxKind.LessEq, BoundBinaryOpKind.LessEq, typeof(int), typeof(bool)),
-
             // bool
-            new(SyntaxKind.LogicalAnd, BoundBinaryOpKind.LogicalAnd, typeof(bool)),
-            new(SyntaxKind.LogicalOr, BoundBinaryOpKind.LogicalOr, typeof(bool)),
-            new(SyntaxKind.EqEq, BoundBinaryOpKind.LogicalEq, typeof(bool)),
-            new(SyntaxKind.NotEq, BoundBinaryOpKind.LogicalNotEq, typeof(bool)),
-            new(SyntaxKind.Or, BoundBinaryOpKind.BitwiseOr, typeof(bool)),
-            new(SyntaxKind.And, BoundBinaryOpKind.BitwiseAnd, typeof(bool)),
-            new(SyntaxKind.Xor, BoundBinaryOpKind.BitwiseXor, typeof(bool))
+            new(SyntaxKind.LogicalAnd, BoundBinaryOpKind.LogicalAnd, TypeSymbol.Bool),
+            new(SyntaxKind.LogicalOr, BoundBinaryOpKind.LogicalOr, TypeSymbol.Bool),
+            new(SyntaxKind.EqEq, BoundBinaryOpKind.LogicalEq, TypeSymbol.Bool),
+            new(SyntaxKind.NotEq, BoundBinaryOpKind.LogicalNotEq, TypeSymbol.Bool),
+            new(SyntaxKind.Or, BoundBinaryOpKind.BitwiseOr, TypeSymbol.Bool),
+            new(SyntaxKind.And, BoundBinaryOpKind.BitwiseAnd, TypeSymbol.Bool),
+            new(SyntaxKind.Xor, BoundBinaryOpKind.BitwiseXor, TypeSymbol.Bool),
+
+            new(SyntaxKind.Plus, BoundBinaryOpKind.Addition, TypeSymbol.Bool, TypeSymbol.String),
+
+
+            // int
+            new(SyntaxKind.Plus, BoundBinaryOpKind.Addition, TypeSymbol.Int),
+            new(SyntaxKind.Minus, BoundBinaryOpKind.Subtraction, TypeSymbol.Int),
+            new(SyntaxKind.Star, BoundBinaryOpKind.Multiplication, TypeSymbol.Int),
+            new(SyntaxKind.Slash, BoundBinaryOpKind.Division, TypeSymbol.Int),
+            new(SyntaxKind.Power, BoundBinaryOpKind.Power, TypeSymbol.Int),
+            new(SyntaxKind.Mod, BoundBinaryOpKind.Modulo, TypeSymbol.Int),
+            new(SyntaxKind.Or, BoundBinaryOpKind.BitwiseOr, TypeSymbol.Int),
+            new(SyntaxKind.And, BoundBinaryOpKind.BitwiseAnd, TypeSymbol.Int),
+            new(SyntaxKind.Xor, BoundBinaryOpKind.BitwiseXor, TypeSymbol.Int),
+            new(SyntaxKind.Rsh, BoundBinaryOpKind.Rsh, TypeSymbol.Int),
+            new(SyntaxKind.Lsh, BoundBinaryOpKind.Lsh, TypeSymbol.Int),
+
+            new(SyntaxKind.EqEq, BoundBinaryOpKind.LogicalEq, TypeSymbol.Int, TypeSymbol.Bool),
+            new(SyntaxKind.NotEq, BoundBinaryOpKind.LogicalNotEq, TypeSymbol.Int, TypeSymbol.Bool),
+            new(SyntaxKind.Greater, BoundBinaryOpKind.Greater, TypeSymbol.Int, TypeSymbol.Bool),
+            new(SyntaxKind.GreaterEq, BoundBinaryOpKind.GreaterEq, TypeSymbol.Int, TypeSymbol.Bool),
+            new(SyntaxKind.Less, BoundBinaryOpKind.Less, TypeSymbol.Int, TypeSymbol.Bool),
+            new(SyntaxKind.LessEq, BoundBinaryOpKind.LessEq, TypeSymbol.Int, TypeSymbol.Bool),
+
+            new(SyntaxKind.Plus, BoundBinaryOpKind.Addition, TypeSymbol.Int, TypeSymbol.String, TypeSymbol.String),
+
+
+            // string
+            new(SyntaxKind.Plus, BoundBinaryOpKind.Addition, TypeSymbol.String),
+            new(SyntaxKind.Plus, BoundBinaryOpKind.Addition, TypeSymbol.String, TypeSymbol.Bool, TypeSymbol.String),
+            new(SyntaxKind.Plus, BoundBinaryOpKind.Addition, TypeSymbol.String, TypeSymbol.Int, TypeSymbol.String),
+            new(SyntaxKind.Star, BoundBinaryOpKind.Multiplication, TypeSymbol.String, TypeSymbol.Int, TypeSymbol.String),
+            new(SyntaxKind.Minus, BoundBinaryOpKind.Subtraction, TypeSymbol.String, TypeSymbol.Int, TypeSymbol.String),
+
+            new(SyntaxKind.EqEq, BoundBinaryOpKind.LogicalEq, TypeSymbol.String, TypeSymbol.Bool),
+            new(SyntaxKind.NotEq, BoundBinaryOpKind.LogicalNotEq, TypeSymbol.String, TypeSymbol.Bool)
         };
 
-        public static BoundBinaryOperator Bind(SyntaxKind kind, Type leftType, Type rightType)
+        public static BoundBinaryOperator Bind(SyntaxKind kind, TypeSymbol leftType, TypeSymbol rightType)
         {
             foreach (var op in _operators)
-                if (op.Kind == kind && op.LeftType == leftType && op.RightType == rightType) return op;
+                if (op.Kind == kind && op.LeftType == leftType && op.RightType == rightType)
+                    return op;
             return null;
         }
     }
@@ -176,44 +195,42 @@ namespace Stonylang.Binding
         private BoundVariableStmt BindVariableStmt(VariableStmt stmt)
         {
             BoundExpr initializer = BindExpression(stmt.Initializer);
-            VariableSymbol variable = new(stmt.Identifier.Lexeme, initializer.Type, null, stmt.Identifier.Span, stmt.IsMut);
-
-            if (!_scope.TryDeclare(variable, out _))
-                _diagnostics.Report(_source, stmt.Keyword.Span, $"Variable \"{stmt.Identifier.Lexeme}\" was already declared in the current or a previous scope.", "DeclarationException", LogLevel.Error);
-
-            return new(variable, initializer);
+            return new(BindVariable(stmt.Identifier, initializer.Type, stmt.IsMut), initializer);
         }
 
         private BoundIfStmt BindIfStmt(IfStmt stmt)
         {
-            BoundExpr condition = BindExpression(stmt.Condition, typeof(bool));
+            BoundExpr condition = BindExpression(stmt.Condition, TypeSymbol.Bool);
             return new(condition, BindBlockStmt(stmt.ThenBranch), stmt.ElseBranch == null ? null : BindBlockStmt(stmt.ElseBranch.ElseBranch));
         }
 
         private BoundWhileStmt BindWhileStmt(WhileStmt stmt)
         {
-            BoundExpr condition = stmt.Condition == null ? new BoundLiteralExpr(true) : BindExpression(stmt.Condition, typeof(bool));
+            BoundExpr condition = stmt.Condition == null ? new BoundLiteralExpr(true) : BindExpression(stmt.Condition, TypeSymbol.Bool);
             return new(condition, BindBlockStmt(stmt.ThenBranch), stmt.IsDoWhile);
         }
 
         private BoundForStmt BindForStmt(ForStmt stmt)
         {
-            BoundExpr initialValue = BindExpression(stmt.InitialValue, typeof(int));
-            VariableSymbol variable = new(stmt.Identifier.Lexeme, initialValue.Type, null, stmt.Identifier.Span, stmt.IsMut);
-            if (!_scope.TryDeclare(variable, out _))
-                _diagnostics.Report(_source, stmt.Identifier.Span, $"Variable \"{stmt.Identifier.Lexeme}\" was already declared in the current or a previous scope.", "DeclarationException", LogLevel.Error);
+            BoundExpr initialValue = BindExpression(stmt.InitialValue, TypeSymbol.Int);
+            BoundExpr range = BindExpression(stmt.Range, TypeSymbol.Int);
+            _scope = new BoundScope(_scope);
 
-            BoundExpr range = BindExpression(stmt.Range, typeof(int));
-            return new(variable, initialValue, range, BindBlockStmt(stmt.Stmt));
+            VariableSymbol variable = BindVariable(stmt.Identifier, TypeSymbol.Int, stmt.IsMut);
+            BoundBlockStmt body = BindBlockStmt(stmt.Stmt);
+
+            _scope = _scope.Parent;
+            return new(variable, initialValue, range, body);
         }
 
         private BoundExpressionStmt BindExpressionStmt(ExpressionStmt stmt) => new(BindExpression(stmt.Expression));
 
-
-        public BoundExpr BindExpression(ExprNode expr, Type expectedType)
+        public BoundExpr BindExpression(ExprNode expr, TypeSymbol expectedType)
         {
             BoundExpr expression = BindExpression(expr);
-            if (expression.Type != expectedType)
+            if (expression.Type != TypeSymbol.Error &&
+                expectedType != TypeSymbol.Error &&
+                expression.Type != expectedType)
                 _diagnostics.Report(_source, expr.Span, $"Cannot convert type of {expression.Type} to type of {expectedType}.", "TypeException", LogLevel.Error);
             return expression;
         }
@@ -232,6 +249,9 @@ namespace Stonylang.Binding
         private BoundExpr BindUnaryExpr(UnaryExpr expr)
         {
             BoundExpr boundOperand = BindExpression(expr.Operand);
+            if (boundOperand.Type == TypeSymbol.Error)
+                return new BoundErrorExpr();
+
             BoundUnaryOperator boundOperator = BoundUnaryOperator.Bind(expr.Op.Kind, boundOperand.Type);
             if (boundOperator != null)
             {
@@ -243,9 +263,9 @@ namespace Stonylang.Binding
                         {
                             if (!variable.IsMut)
                                 _diagnostics.Report(_source, expr.Op.Span, $"Cannot assign to \"{bv.Variable.Name}\" since it is a read-only variable.", "AssignmentExcption", LogLevel.Error);
-                            if (variable.Type != typeof(int))
+                            if (variable.Type != TypeSymbol.Int)
                                 _diagnostics.Report(_source, expr.Op.Span, $"Cannot assign type of \"int\" to {bv.Variable.Name}, which has a type of {bv.Variable.Type}.", "TypeException", LogLevel.Error);
-                            return new BoundAssignmentExpr(bv.Variable, new BoundBinaryExpr(new BoundVariableExpr(variable), BoundBinaryOperator.Bind(boundOperator.Kind == SyntaxKind.Increment ? SyntaxKind.Plus : SyntaxKind.Minus, typeof(int), typeof(int)), new BoundLiteralExpr(1)));
+                            return new BoundAssignmentExpr(bv.Variable, new BoundBinaryExpr(new BoundVariableExpr(variable), BoundBinaryOperator.Bind(boundOperator.Kind == SyntaxKind.Increment ? SyntaxKind.Plus : SyntaxKind.Minus, TypeSymbol.Int, TypeSymbol.Int), new BoundLiteralExpr(1)));
                         }
                         _diagnostics.Report(_source, expr.Op.Span, $"Could not find \"{bv.Variable.Name}\" in the current context.", "KeyNotFoundException", LogLevel.Error);
                     }
@@ -256,30 +276,35 @@ namespace Stonylang.Binding
             }
 
             _diagnostics.Report(_source, expr.Op.Span, $"Unary operator '{expr.Op.Lexeme}' is not defined for type \"{boundOperand.Type}\".", "TypeException", LogLevel.Error);
-            return boundOperand;
+            return new BoundErrorExpr();
         }
 
         private BoundExpr BindBinaryExpr(BinaryExpr expr)
         {
             BoundExpr boundLeft = BindExpression(expr.Left);
             BoundExpr boundRight = BindExpression(expr.Right);
+            if (boundLeft.Type == TypeSymbol.Error || boundRight.Type == TypeSymbol.Error)
+                return new BoundErrorExpr();
+
             BoundBinaryOperator boundOperator = BoundBinaryOperator.Bind(expr.Op.Kind, boundLeft.Type, boundRight.Type);
             if (boundOperator != null)
                 return new BoundBinaryExpr(boundLeft, boundOperator, boundRight);
 
             _diagnostics.Report(_source, expr.Op.Span, $"Binary operator '{expr.Op.Lexeme}' is not defined for types \"{boundLeft.Type}\" and \"{boundRight.Type}\".", "TypeException", LogLevel.Error);
-            return boundLeft;
+            return new BoundErrorExpr();
         }
 
         private BoundExpr BindNameExpr(NameExpr expr)
         {
-            string name = expr.Name.Lexeme;
-            if (string.IsNullOrEmpty(name))
-                return new BoundLiteralExpr(0);
+            if (expr.Name.IsMissing)
+                return new BoundErrorExpr();
 
-            if (_scope.TryLookUp(name, out var value)) return new BoundVariableExpr(value);
-            _diagnostics.Report(_source, expr.Name.Span, $"Could not find \"{name}\" in the current context.", "KeyNotFoundException", LogLevel.Error);
-            return new BoundLiteralExpr(0);
+            if (_scope.TryLookUp(expr.Name.Lexeme, out var value))
+                return new BoundVariableExpr(value);
+
+            if (expr.Name.Kind != SyntaxKind.EOF)
+                _diagnostics.Report(_source, expr.Name.Span, $"Could not find \"{expr.Name.Lexeme}\" in the current context.", "KeyNotFoundException", LogLevel.Error);
+            return new BoundErrorExpr();
         }
 
         private BoundExpr BindAssignmentExpr(AssignmentExpr expr)
@@ -289,23 +314,32 @@ namespace Stonylang.Binding
 
             if (!_scope.TryLookUp(name, out var variable))
             {
-                _diagnostics.Report(_source, expr.Name.Span, $"Could not find \"{name}\" in the current context.", "KeyNotFoundException", LogLevel.Error);
-                return new BoundLiteralExpr(0);
+                if (expr.Name.Kind != SyntaxKind.EOF)
+                    _diagnostics.Report(_source, expr.Name.Span, $"Could not find \"{name}\" in the current context.", "KeyNotFoundException", LogLevel.Error);
+                return new BoundErrorExpr();
             }
 
             if (!variable.IsMut)
-            {
                 _diagnostics.Report(_source, expr.Name.Span, $"Cannot assign to \"{name}\" since it is a read-only variable.", "AssignmentException", LogLevel.Error);
-                return new BoundLiteralExpr(0);
-            }
 
             if (!variable.Type.Equals(boundExpresion.Type))
             {
-                _diagnostics.Report(_source, expr.Name.Span, $"Cannot assign a type of \"{boundExpresion.Type}\" to \"{name}\", which has a type of \"{variable.Type}\".", "TypeException", LogLevel.Error);
+                _diagnostics.Report(_source, expr.Name.Span, $"Cannot assign a value with type of \"{boundExpresion.Type}\" to \"{name}\", which has a type of \"{variable.Type}\".", "TypeException", LogLevel.Error);
                 return boundExpresion;
             }
 
             return new BoundAssignmentExpr(new(name, boundExpresion.Type, null, expr.EqualsToken.Span), boundExpresion);
+        }
+
+        private VariableSymbol BindVariable(Token identifier, TypeSymbol type, bool isMut)
+        {
+            string name = identifier.Lexeme ?? "?";
+            bool declare = !identifier.IsMissing;
+            VariableSymbol variable = new(name, type, null, identifier.Span, isMut);
+
+            if (declare && !_scope.TryDeclare(variable, out _))
+                _diagnostics.Report(_source, identifier.Span, $"Variable \"{identifier.Lexeme}\" was already declared in the current or a previous scope.", "DeclarationException", LogLevel.Error);
+            return variable;
         }
     }
 }

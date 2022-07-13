@@ -21,6 +21,7 @@ namespace Stonylang.Binding
 
         public virtual BoundExpr RewriteExpr(BoundExpr node) => node.Kind switch
         {
+            BoundNodeKind.ErrorExpr => RewriteErrorExpr((BoundErrorExpr)node),
             BoundNodeKind.LiteralExpr => RewriteLiteralExpr((BoundLiteralExpr)node),
             BoundNodeKind.UnaryExpr => RewriteUnaryExpr((BoundUnaryExpr)node),
             BoundNodeKind.BinaryExpr => RewriteBinaryExpr((BoundBinaryExpr)node),
@@ -112,6 +113,7 @@ namespace Stonylang.Binding
             return new BoundExpressionStmt(node.Expression);
         }
 
+        protected virtual BoundExpr RewriteErrorExpr(BoundErrorExpr node) => node;
         protected virtual BoundExpr RewriteLiteralExpr(BoundLiteralExpr node) => node;
         protected virtual BoundExpr RewriteVariablExpr(BoundVariableExpr node) => node;
         protected virtual BoundExpr RewriteAssignmentExpr(BoundAssignmentExpr node)

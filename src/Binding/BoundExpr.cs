@@ -1,4 +1,5 @@
 ﻿using Stonylang.Lexer;
+using Stonylang.Symbols;
 using Stonylang.Utility;
 using System;
 
@@ -12,6 +13,7 @@ namespace Stonylang.Binding
         BinaryExpr,
         VariableExpr,
         AssignmentExpr,
+        ErrorExpr,
 
         // Stmts
         BlockStatement,
@@ -60,13 +62,23 @@ namespace Stonylang.Binding
 
     internal abstract class BoundExpr : BoundNode
     {
-        public abstract Type Type { get; }
+        public abstract TypeSymbol Type { get; }
     }
 
     internal sealed class BoundLiteralExpr : BoundExpr
     {
-        public BoundLiteralExpr(object value) => Value = value;
-        public override Type Type => Value.GetType();
+        public BoundLiteralExpr(object value)
+        {
+            Value = value;
+            Type = value switch
+            {
+                bool => TypeSymbol.Bool,
+                int => TypeSymbol.Int,
+                string => TypeSymbol.String,
+                _ => throw new Exception($"Unexpected literal \"{value}\" of type {value.GetType()}.")
+            };
+        }
+        public override TypeSymbol Type { get; }
         public override BoundNodeKind Kind => BoundNodeKind.LiteralExpr;
         public object Value { get; }
 
@@ -80,7 +92,7 @@ namespace Stonylang.Binding
             Operand = operand;
         }
 
-        public override Type Type => Op.ResultType;
+        public override TypeSymbol Type => Op.ResultType;
         public override BoundNodeKind Kind => BoundNodeKind.UnaryExpr;
         public BoundUnaryOperator Op { get; }
         public BoundExpr Operand { get; }
@@ -95,7 +107,7 @@ namespace Stonylang.Binding
             Right = right;
         }
 
-        public override Type Type => Op.ResultType;
+        public override TypeSymbol Type => Op.ResultType;
         public override BoundNodeKind Kind => BoundNodeKind.BinaryExpr;
         public BoundExpr Left { get; }
         public BoundBinaryOperator Op { get; }
@@ -107,7 +119,7 @@ namespace Stonylang.Binding
         public BoundVariableExpr(VariableSymbol variable) => Variable = variable;
 
         public VariableSymbol Variable { get; }
-        public override Type Type => Variable.Type;
+        public override TypeSymbol Type => Variable.Type;
         public override BoundNodeKind Kind => BoundNodeKind.VariableExpr;
     }
 
@@ -121,7 +133,13 @@ namespace Stonylang.Binding
 
         public VariableSymbol Variable { get; }
         public BoundExpr Value { get; }
-        public override Type Type => Variable.Type;
+        public override TypeSymbol Type => Variable.Type;
         public override BoundNodeKind Kind => BoundNodeKind.AssignmentExpr;
+    }
+
+    internal sealed class BoundErrorExpr : BoundExpr
+    {
+        public override TypeSymbol Type => TypeSymbol.Error;
+        public override BoundNodeKind Kind => BoundNodeKind.ErrorExpr;
     }
 }

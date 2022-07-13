@@ -1,5 +1,6 @@
 ﻿using Stonylang.SyntaxFacts;
 using Stonylang.Utility;
+using System.Text;
 
 namespace Stonylang.Lexer
 {
@@ -17,6 +18,45 @@ namespace Stonylang.Lexer
         private char Current => Peek();
         private char Peek(int offset = 0) => _position + offset >= _source.Length ? '\0' : _source[_position + offset];
 
+        private void ReadString()
+        {
+            ++_position;
+            StringBuilder sb = new();
+            bool done = false;
+
+            while (!done)
+            {
+                switch (Current)
+                {
+                    case '\0':
+                    case '\r':
+                    case '\n':
+                        _diagnostics.Report(_source, new(_start, _position - _start), "Unterminated string.", "SyntaxException", LogLevel.Error);
+                        done = true;
+                        break;
+                    case '"':
+                        if (Peek(1) == '"')
+                        {
+                            sb.Append(Current);
+                            _position += 2;
+                        }
+                        else
+                        {
+                            done = true;
+                            ++_position;
+                        }
+                        break;
+                    default:
+                        sb.Append(Current);
+                        ++_position;
+                        break;
+                }
+
+                _kind = SyntaxKind.String;
+                _value = sb.ToString();
+            }
+        }
+
         private void ReadNumber()
         {
             while (char.IsDigit(Current)) Advance();
@@ -28,6 +68,7 @@ namespace Stonylang.Lexer
             _value = value;
         }
 
+        private void Advance() => ++_position;
         private void ReadWhitespace()
         {
             while (char.IsWhiteSpace(Current)) Advance();
@@ -268,6 +309,9 @@ namespace Stonylang.Lexer
                         _kind = SyntaxKind.Less;
                     }
                     break;
+                case '"':
+                    ReadString();
+                    break;
                 case ' ':
                 case '\t':
                 case '\r':
@@ -294,7 +338,5 @@ namespace Stonylang.Lexer
             };
             return new Token(_kind, _kind.GetText() ?? _source.ToString()[_start.._position], _value, new(_start, _position - _start), _line);
         }
-
-        private void Advance() => ++_position;
     }
 }

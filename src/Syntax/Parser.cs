@@ -4,7 +4,6 @@ using Stonylang.Utility;
 using Stonylang.Lexer;
 using Stonylang.SyntaxFacts;
 using System.Collections.Immutable;
-using System;
 
 namespace Stonylang.Parser
 {
@@ -97,7 +96,9 @@ namespace Stonylang.Parser
         {
             Token keyword = Match(SyntaxKind.ForKeyword);
             bool isMut = Current.Kind == SyntaxKind.MutKeyword;
-            if (isMut) Match(SyntaxKind.MutKeyword);
+            if (isMut)
+                Match(SyntaxKind.MutKeyword);
+
             Token identifier = Match(SyntaxKind.Identifier);
             Match(SyntaxKind.Equals);
             ExprNode initialValue = ParseExpression();
@@ -150,6 +151,7 @@ namespace Stonylang.Parser
 
             return ParseBinaryExpression();
         }
+
         private ExprNode ParseBinaryExpression(int parentPrecedence = 0)
         {
             ExprNode left;
@@ -169,31 +171,33 @@ namespace Stonylang.Parser
             return left;
         }
 
-        public ExprNode ParsePrimaryExpression()
+        public ExprNode ParsePrimaryExpression() => Current.Kind switch
         {
-            switch (Current.Kind)
-            {
-                case SyntaxKind.LParen:
-                    {
-                        Advance();
-                        ExprNode expr = ParseExpression();
-                        Match(SyntaxKind.RParen);
-                        return expr;
-                    }
-                case SyntaxKind.TrueKeyword:
-                case SyntaxKind.FalseKeyword:
-                    {
-                        bool isTrue = Current.Kind == SyntaxKind.TrueKeyword;
-                        Token kw = isTrue ? Match(SyntaxKind.TrueKeyword) : Match(SyntaxKind.FalseKeyword);
-                        return new LiteralExpr(kw, isTrue);
-                    }
-                case SyntaxKind.Identifier:
-                    return new NameExpr(Match(SyntaxKind.Identifier));
-                case SyntaxKind.Number:
-                default:
-                    return new LiteralExpr(Match(SyntaxKind.Number, "Expected expression."));
-            }
+            SyntaxKind.LParen => ParseGroupingExpr(),
+            SyntaxKind.TrueKeyword or SyntaxKind.FalseKeyword => ParseBoolLiteral(),
+            SyntaxKind.Identifier => ParseNameExpr(),
+            SyntaxKind.String => ParseStringLiteral(),
+            SyntaxKind.Number or _ => ParseNumberLiteral(),
+        };
+
+        private ExprNode ParseGroupingExpr()
+        {
+            Advance();
+            ExprNode expr = ParseExpression();
+            Match(SyntaxKind.RParen);
+            return expr;
         }
+
+        private ExprNode ParseBoolLiteral()
+        {
+            bool isTrue = Current.Kind == SyntaxKind.TrueKeyword;
+            Token kw = isTrue ? Match(SyntaxKind.TrueKeyword) : Match(SyntaxKind.FalseKeyword);
+            return new LiteralExpr(kw, isTrue);
+        }
+
+        private ExprNode ParseNumberLiteral() => new LiteralExpr(Match(SyntaxKind.Number, "Expected expression."));
+        private ExprNode ParseStringLiteral() => new LiteralExpr(Match(SyntaxKind.String));
+        private ExprNode ParseNameExpr() => new NameExpr(Match(SyntaxKind.Identifier));
 
         private Token Peek(int offset = 0) => _position + offset >= _tokens.Length ? _tokens.Last() : _tokens[_position + offset];
         private Token Current => Peek();

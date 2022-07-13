@@ -1,5 +1,6 @@
 ﻿using Stonylang.Binding;
 using Stonylang.Lowering;
+using Stonylang.Symbols;
 using Stonylang.Utility;
 using System;
 using System.Collections.Generic;

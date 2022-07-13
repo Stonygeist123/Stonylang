@@ -1,4 +1,5 @@
-﻿using Stonylang.Utility;
+﻿using Stonylang.Symbols;
+using Stonylang.Utility;
 using System.Collections.Immutable;
 
 namespace Stonylang.Binding
@@ -81,14 +82,14 @@ namespace Stonylang.Binding
 
     internal sealed class BoundGoToStmt : BoundStmt
     {
-        public BoundGoToStmt(LabelSymbol label) => Label = label;
+        public BoundGoToStmt(BoundLabel label) => Label = label;
         public override BoundNodeKind Kind => BoundNodeKind.GoToStatement;
-        public LabelSymbol Label { get; }
+        public BoundLabel Label { get; }
     }
 
     internal sealed class BoundConditionalGoToStmt : BoundStmt
     {
-        public BoundConditionalGoToStmt(LabelSymbol label, BoundExpr condition, bool jumpIfTrue = false)
+        public BoundConditionalGoToStmt(BoundLabel label, BoundExpr condition, bool jumpIfTrue = true)
         {
             Label = label;
             Condition = condition;
@@ -96,15 +97,15 @@ namespace Stonylang.Binding
         }
 
         public override BoundNodeKind Kind => BoundNodeKind.ConditionalGoToStatement;
-        public LabelSymbol Label { get; }
+        public BoundLabel Label { get; }
         public BoundExpr Condition { get; }
         public bool JumpIfTrue { get; }
     }
 
     internal sealed class BoundLabelStmt : BoundStmt
     {
-        public BoundLabelStmt(LabelSymbol label) => Label = label;
+        public BoundLabelStmt(BoundLabel label) => Label = label;
         public override BoundNodeKind Kind => BoundNodeKind.LabelStatement;
-        public LabelSymbol Label { get; }
+        public BoundLabel Label { get; }
     }
 }

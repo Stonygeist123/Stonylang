@@ -138,7 +138,6 @@ namespace Stonylang.SyntaxFacts
             SyntaxKind.Arrow => "->",
             SyntaxKind.QuestionMark => "?",
             SyntaxKind.Colon => ":",
-            SyntaxKind.EOF => "End of File",
             _ => null
         };
     }

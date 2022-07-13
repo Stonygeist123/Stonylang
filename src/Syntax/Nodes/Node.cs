@@ -12,20 +12,6 @@ namespace Stonylang.Parser
     {
         public virtual TextSpan Span => TextSpan.FromRounds(GetChildren().First().Span.Start, GetChildren().Last().Span.End);
         public abstract SyntaxKind Kind { get; }
-        public IEnumerable<Node> GetChildren()
-        {
-            foreach (PropertyInfo prop in GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance))
-                if (typeof(Node).IsAssignableFrom(prop.PropertyType) && prop is not null)
-                {
-                    Node child = (Node)prop.GetValue(this);
-                    if (child != null)
-                        yield return child;
-                }
-                else if (typeof(IEnumerable<Node>).IsAssignableFrom(prop.PropertyType))
-                    foreach (Node child in (IEnumerable<Node>)prop.GetValue(this))
-                        if (child != null)
-                            yield return child;
-        }
 
         public void WriteTo(TextWriter writer) => PrettyPrint(writer, this);
         private static void PrettyPrint(TextWriter writer, Node node, string indent = "", bool isLast = true)
@@ -48,6 +34,22 @@ namespace Stonylang.Parser
                 PrettyPrint(writer, child, indent, child == lastChild);
         }
 
+        public IEnumerable<Node> GetChildren()
+        {
+            foreach (PropertyInfo prop in GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance))
+                if (typeof(Node).IsAssignableFrom(prop.PropertyType) && prop is not null)
+                {
+                    Node child = (Node)prop.GetValue(this);
+                    if (child != null)
+                        yield return child;
+                }
+                else if (typeof(IEnumerable<Node>).IsAssignableFrom(prop.PropertyType))
+                    foreach (Node child in (IEnumerable<Node>)prop.GetValue(this))
+                        if (child != null)
+                            yield return child;
+        }
+
+        public Token GetLastToken() => this is Token t ? t : GetChildren().Last().GetLastToken();
         public new string ToString()
         {
             using StringWriter writer = new StringWriter();

@@ -1,4 +1,5 @@
 ﻿using Stonylang.Binding;
+using Stonylang.Symbols;
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
@@ -8,6 +9,13 @@ namespace Stonylang.Utility
     public enum LogLevel
     {
         Info, Warn, Error
+    }
+
+    public sealed class BoundLabel
+    {
+        public BoundLabel(string name) => Name = name;
+        public string Name { get; }
+        public override string ToString() => Name;
     }
 
     public struct TextSpan
@@ -24,32 +32,6 @@ namespace Stonylang.Utility
         public int End => Start + Length;
         public static TextSpan FromRounds(int start, int end) => new(start, end - start);
         public override string ToString() => $"{Start}..{End}";
-    }
-
-    public struct VariableSymbol
-    {
-        public VariableSymbol(string name, Type type, object value, TextSpan? span, bool isMut = false)
-        {
-            Name = name;
-            Type = type;
-            Value = value;
-            Span = span;
-            IsMut = isMut;
-        }
-
-        public string Name { get; }
-        public Type Type { get; }
-        public object Value { get; set; }
-        public TextSpan? Span { get; }
-        public bool IsMut { get; }
-        public override string ToString() => Name;
-    }
-
-    public struct LabelSymbol
-    {
-        public LabelSymbol(string name) => Name = name;
-        public string Name { get; }
-        public override string ToString() => Name;
     }
 
     public struct TextLine
@@ -139,42 +121,5 @@ namespace Stonylang.Utility
         public override string ToString() => _text;
         public string ToString(int start, int length) => _text.Substring(start, Math.Clamp(length + 1, 0, Length));
         public string ToString(TextSpan span) => ToString(span.Start, span.Length);
-    }
-
-    internal sealed class BoundScope
-    {
-        private readonly Dictionary<string, VariableSymbol> _variables = new();
-        public BoundScope Parent { get; }
-        public BoundScope(BoundScope parent) => Parent = parent;
-
-        public ImmutableArray<VariableSymbol> GetDeclaredVariables() => _variables.Values.ToImmutableArray();
-        public bool TryLookUp(string name, out VariableSymbol variable) => _variables.TryGetValue(name, out variable) || (Parent != null && Parent.TryLookUp(name, out variable));
-        public bool TryDeclare(VariableSymbol variable, out VariableSymbol oldVariable)
-        {
-            if (TryLookUp(variable.Name, out var v))
-            {
-                oldVariable = v;
-                return false;
-            }
-            oldVariable = variable;
-            _variables.Add(variable.Name, variable);
-            return true;
-        }
-    }
-
-    internal sealed class BoundGlobalScope
-    {
-        public BoundGlobalScope(BoundGlobalScope previous, DiagnosticBag diagnostics, ImmutableArray<VariableSymbol> variables, BoundStmt statement)
-        {
-            Previous = previous;
-            Diagnostics = diagnostics;
-            Variables = variables;
-            Statement = statement;
-        }
-
-        public BoundGlobalScope Previous { get; }
-        public DiagnosticBag Diagnostics { get; }
-        public ImmutableArray<VariableSymbol> Variables { get; }
-        public BoundStmt Statement { get; }
     }
 }
