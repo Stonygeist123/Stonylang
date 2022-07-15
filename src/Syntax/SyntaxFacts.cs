@@ -12,6 +12,7 @@ namespace Stonylang.SyntaxFacts
             SyntaxKind.Plus or SyntaxKind.Minus or SyntaxKind.Inv or SyntaxKind.Not => 12,
             _ => 0
         };
+
         public static int GetBinaryOpPrecedence(this SyntaxKind kind) => kind switch
         {
             SyntaxKind.Power => 11,

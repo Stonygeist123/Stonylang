@@ -3,11 +3,13 @@ using System.Collections.Immutable;
 
 namespace Stonylang.Parser
 {
-    public abstract class StmtNode : Node { }
+    public abstract class StmtNode : Node
+    { }
 
     public sealed class ExpressionStmt : StmtNode
     {
         public ExpressionStmt(ExprNode expression) => Expression = expression;
+
         public override SyntaxKind Kind => SyntaxKind.ExpressionStmt;
         public ExprNode Expression { get; }
     }
@@ -29,12 +31,13 @@ namespace Stonylang.Parser
 
     public sealed class VariableStmt : StmtNode
     {
-        public VariableStmt(Token keyword, Token identifier, ExprNode initializer, bool isMut)
+        public VariableStmt(Token keyword, Token identifier, ExprNode initializer, bool isMut, Token type)
         {
             Keyword = keyword;
             Identifier = identifier;
             Initializer = initializer;
             IsMut = isMut;
+            Type = type;
         }
 
         public override SyntaxKind Kind => SyntaxKind.VariableStmt;
@@ -42,6 +45,7 @@ namespace Stonylang.Parser
         public Token Identifier { get; }
         public ExprNode Initializer { get; }
         public bool IsMut { get; }
+        public Token Type { get; }
     }
 
     public sealed class IfStmt : StmtNode
@@ -76,19 +80,19 @@ namespace Stonylang.Parser
 
     public sealed class WhileStmt : StmtNode
     {
-        public WhileStmt(Token whileKeyword, ExprNode condition, BlockStmt thenBranch, bool isDoWhile)
+        public WhileStmt(Token whileKeyword, ExprNode condition, BlockStmt thenBranch, Token doKeyword = null)
         {
             WhileKeyword = whileKeyword;
             Condition = condition;
             ThenBranch = thenBranch;
-            IsDoWhile = isDoWhile;
+            DoKeyword = doKeyword;
         }
 
         public override SyntaxKind Kind => SyntaxKind.WhileStmt;
+        public Token DoKeyword { get; }
         public Token WhileKeyword { get; }
         public ExprNode Condition { get; }
         public BlockStmt ThenBranch { get; }
-        public bool IsDoWhile { get; }
     }
 
     public sealed class ForStmt : StmtNode

@@ -8,16 +8,17 @@ namespace Stonylang.Utility
         {
             Source = source;
             Span = span;
-            ErrorType = errorType;
+            Type = errorType;
             Message = message;
             Level = level;
         }
 
         public SourceText Source { get; }
         public TextSpan Span { get; }
-        public string ErrorType { get; }
+        public string Type { get; }
         public string Message { get; }
         public LogLevel Level { get; }
+
         public void Print()
         {
             int lineIndex = Source.GetLineIndex(Span.Start);
@@ -32,14 +33,15 @@ namespace Stonylang.Utility
             };
             string msg = $"[{levelS} {lineIndex + 1}:{c}{(Span.End <= c ? "" : $"-{Span.End}")}] ",
                 message = msg + line.ToString() + "\n",
-                spacing = new string(' ', Span.Start + msg.Length);
+                spacing = new(' ', Span.Start + msg.Length);
             message += spacing + new string('^', Span.Length) + '\n';
-            message += spacing + $"{ErrorType}: {Message}";
+            message += spacing + $"{Type}: {Message}";
 
             Console.ForegroundColor = GetLogLevelColor();
             Console.WriteLine(message);
             Console.ResetColor();
         }
+
         public override string ToString() => Message;
 
         public ConsoleColor GetLogLevelColor() => Level switch

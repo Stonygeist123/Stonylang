@@ -14,5 +14,4 @@ namespace Stonylang.Parser
         public StmtNode Statement { get; }
         public Token EofToken { get; }
     }
-
 }

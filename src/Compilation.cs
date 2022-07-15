@@ -2,9 +2,7 @@
 using Stonylang.Lowering;
 using Stonylang.Symbols;
 using Stonylang.Utility;
-using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -17,6 +15,7 @@ namespace Stonylang.Evaluator
         private readonly SourceText _source;
         public SyntaxTree.SyntaxTree Syntax { get; }
         public Compilation Previous { get; }
+
         private Compilation(Compilation previous, SyntaxTree.SyntaxTree syntax, SourceText source)
         {
             Previous = previous;
@@ -44,10 +43,12 @@ namespace Stonylang.Evaluator
         }
 
         public Compilation ContinueWith(SyntaxTree.SyntaxTree syntax, SourceText source) => new(this, syntax, source);
+
         public EvaluationResult Evaluate(Dictionary<string, VariableSymbol> symbolTable)
         {
             DiagnosticBag diagnostics = Syntax.Diagnostics.AddRange(GlobalScope.Diagnostics);
-            if (diagnostics.Any()) return new EvaluationResult(diagnostics, null);
+            if (diagnostics.Any())
+                return new EvaluationResult(diagnostics, null);
 
             BoundBlockStmt stmt = GetStatement();
             Evaluator evaluator = new(stmt, symbolTable);

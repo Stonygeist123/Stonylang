@@ -1,6 +1,7 @@
-﻿using Stonylang.Binding;
-using Stonylang.Symbols;
+﻿using Stonylang.Lexer;
+using Stonylang.Parser;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 
@@ -14,7 +15,9 @@ namespace Stonylang.Utility
     public sealed class BoundLabel
     {
         public BoundLabel(string name) => Name = name;
+
         public string Name { get; }
+
         public override string ToString() => Name;
     }
 
@@ -30,7 +33,9 @@ namespace Stonylang.Utility
         public int Length { get; }
 
         public int End => Start + Length;
+
         public static TextSpan FromRounds(int start, int end) => new(start, end - start);
+
         public override string ToString() => $"{Start}..{End}";
     }
 
@@ -51,12 +56,14 @@ namespace Stonylang.Utility
         public int End => Start + Length;
         public TextSpan Span => new(Start, Length);
         public TextSpan SpanWithLineBreak => new(Start, LengthWithLineBreak);
+
         public override string ToString() => Source.ToString(Span);
     }
 
     public sealed class SourceText
     {
         private readonly string _text;
+
         private SourceText(string text)
         {
             _text = text;
@@ -66,8 +73,10 @@ namespace Stonylang.Utility
         public char this[int index] => _text[index];
 
         public static SourceText From(string text) => new(text);
+
         public ImmutableArray<TextLine> Lines { get; }
         public int Length => _text.Length;
+
         private static void AddLine(ImmutableArray<TextLine>.Builder result, SourceText sourceText, int lineStart, int position, int lineBreakWidth)
             => result.Add(new(sourceText, lineStart, position - lineStart, position - lineStart + lineBreakWidth));
 
@@ -109,6 +118,7 @@ namespace Stonylang.Utility
 
             return lower - 1;
         }
+
         private static int GetLineBreakWidth(string text, int position)
         {
             char c = text[Math.Clamp(position, 0, Math.Clamp(text.Length - 1, 0, text.Length - 1))];
@@ -119,7 +129,33 @@ namespace Stonylang.Utility
         }
 
         public override string ToString() => _text;
+
         public string ToString(int start, int length) => _text.Substring(start, Math.Clamp(length + 1, 0, Length));
+
         public string ToString(TextSpan span) => ToString(span.Start, span.Length);
+    }
+
+    public abstract class SeparatedSyntaxList
+    {
+        public abstract ImmutableArray<Node> GetWithSeparators();
+    }
+
+    public sealed class SeparatedSyntaxList<T> : SeparatedSyntaxList, IEnumerable<T>
+        where T : Node
+    {
+        private readonly ImmutableArray<Node> _nodesAndSeparators;
+        public SeparatedSyntaxList(ImmutableArray<Node> nodesAndSeparators) => _nodesAndSeparators = nodesAndSeparators;
+
+        public int Count => (_nodesAndSeparators.Length + 1) / 2;
+        public T this[int index] => (T)_nodesAndSeparators[index * 2];
+        public Token GetSeparator(int index) => index == Count - 1 ? null : (Token)_nodesAndSeparators[index * 2 + 1];
+        public override ImmutableArray<Node> GetWithSeparators() => _nodesAndSeparators;
+
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+        public IEnumerator<T> GetEnumerator()
+        {
+            for (int i = 0; i < Count; ++i)
+                yield return this[i];
+        }
     }
 }

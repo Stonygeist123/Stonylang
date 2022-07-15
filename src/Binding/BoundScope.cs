@@ -5,26 +5,57 @@ using System.Collections.Immutable;
 
 namespace Stonylang.Binding
 {
-
     internal sealed class BoundScope
     {
-        private readonly Dictionary<string, VariableSymbol> _variables = new();
+        private Dictionary<string, VariableSymbol> _variables;
+        private Dictionary<string, FunctionSymbol> _functions;
         public BoundScope Parent { get; }
+
         public BoundScope(BoundScope parent) => Parent = parent;
 
-        public ImmutableArray<VariableSymbol> GetDeclaredVariables() => _variables.Values.ToImmutableArray();
-        public bool TryLookUp(string name, out VariableSymbol variable) => _variables.TryGetValue(name, out variable) || (Parent != null && Parent.TryLookUp(name, out variable));
-        public bool TryDeclare(VariableSymbol variable, out VariableSymbol oldVariable)
+        public bool TryLookUpVariable(string name, out VariableSymbol variable)
         {
-            if (TryLookUp(variable.Name, out var v))
-            {
-                oldVariable = v;
+            variable = null;
+            if (_variables != null && _variables.TryGetValue(name, out variable))
+                return true;
+            if (Parent == null)
                 return false;
-            }
-            oldVariable = variable;
+            return Parent.TryLookUpVariable(name, out variable);
+        }
+
+        public bool TryDeclareVariable(VariableSymbol variable)
+        {
+            if (_variables == null)
+                _variables = new();
+            if (TryLookUpVariable(variable.Name, out _))
+                return false;
             _variables.Add(variable.Name, variable);
             return true;
         }
+
+        public bool TryLookUpFunction(string name, out FunctionSymbol function)
+        {
+            function = null;
+            if (_functions != null && _functions.TryGetValue(name, out function))
+                return true;
+            if (Parent == null)
+                return false;
+            return Parent.TryLookUpFunction(name, out function);
+        }
+
+        public bool TryDeclareFunction(FunctionSymbol function)
+        {
+            if (_functions == null)
+                _functions = new();
+
+            if (TryLookUpFunction(function.Name, out _))
+                return false;
+            _functions.Add(function.Name, function);
+            return true;
+        }
+
+        public ImmutableArray<VariableSymbol> GetDeclaredVariables() => _variables == null ? ImmutableArray<VariableSymbol>.Empty : _variables.Values.ToImmutableArray();
+        public ImmutableArray<FunctionSymbol> GetDeclaredFunctions() => _functions == null ? ImmutableArray<FunctionSymbol>.Empty : _functions.Values.ToImmutableArray();
     }
 
     internal sealed class BoundGlobalScope

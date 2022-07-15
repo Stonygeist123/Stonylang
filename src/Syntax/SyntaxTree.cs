@@ -1,6 +1,6 @@
-﻿using Stonylang.Utility;
-using Stonylang.Lexer;
+﻿using Stonylang.Lexer;
 using Stonylang.Parser;
+using Stonylang.Utility;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 
@@ -25,8 +25,11 @@ namespace Stonylang.SyntaxTree
         public Token EofToken { get; }
 
         public static SyntaxTree Parse(SourceText source) => new SyntaxTree(source);
+
         public static SyntaxTree Parse(string source) => Parse(SourceText.From(source));
+
         public static ImmutableArray<Token> ParseTokens(string source) => ParseTokens(source, out _);
+
         public static ImmutableArray<Token> ParseTokens(string source, out DiagnosticBag diagnostics)
         {
             if (!string.IsNullOrWhiteSpace(source))

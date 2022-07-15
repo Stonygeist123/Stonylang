@@ -27,6 +27,8 @@ namespace Stonylang.Binding
             BoundNodeKind.BinaryExpr => RewriteBinaryExpr((BoundBinaryExpr)node),
             BoundNodeKind.VariableExpr => RewriteVariablExpr((BoundVariableExpr)node),
             BoundNodeKind.AssignmentExpr => RewriteAssignmentExpr((BoundAssignmentExpr)node),
+            BoundNodeKind.CallExpr => RewriteCallExpr((BoundCallExpr)node),
+            BoundNodeKind.ConversionExpr => RewriteConversionExpr((BoundConversionExpr)node),
             _ => throw new Exception($"Unexpected node: {node.Kind}."),
         };
 
@@ -96,7 +98,9 @@ namespace Stonylang.Binding
         }
 
         protected virtual BoundStmt RewriteLabelStatement(BoundLabelStmt node) => node;
+
         protected virtual BoundStmt RewriteGoToStatement(BoundGoToStmt node) => node;
+
         protected virtual BoundStmt RewriteConditionalGoToStmt(BoundConditionalGoToStmt node)
         {
             BoundExpr condition = RewriteExpr(node.Condition);
@@ -114,8 +118,11 @@ namespace Stonylang.Binding
         }
 
         protected virtual BoundExpr RewriteErrorExpr(BoundErrorExpr node) => node;
+
         protected virtual BoundExpr RewriteLiteralExpr(BoundLiteralExpr node) => node;
+
         protected virtual BoundExpr RewriteVariablExpr(BoundVariableExpr node) => node;
+
         protected virtual BoundExpr RewriteAssignmentExpr(BoundAssignmentExpr node)
         {
             BoundExpr expr = RewriteExpr(node.Value);
@@ -139,6 +146,41 @@ namespace Stonylang.Binding
             if (left == node.Left && right == node.Right)
                 return node;
             return new BoundBinaryExpr(left, node.Op, right);
+        }
+
+        protected virtual BoundExpr RewriteCallExpr(BoundCallExpr node)
+        {
+            ImmutableArray<BoundExpr>.Builder builder = null;
+            for (int i = 0; i < node.Arguments.Length; ++i)
+            {
+                BoundExpr oldExpr = node.Arguments[i];
+                BoundExpr newExpr = RewriteExpr(oldExpr);
+                if (oldExpr != newExpr)
+                {
+                    if (builder == null)
+                    {
+                        builder = ImmutableArray.CreateBuilder<BoundExpr>(node.Arguments.Length);
+                        for (int j = 0; j < i; ++j)
+                            builder.Add(node.Arguments[j]);
+                    }
+                }
+                if (builder != null)
+                    builder.Add(newExpr);
+            }
+
+            if (builder == null)
+                return node;
+
+            return new BoundCallExpr(node.Function, builder.ToImmutable());
+        }
+
+        protected virtual BoundExpr RewriteConversionExpr(BoundConversionExpr node)
+        {
+            BoundExpr expr = RewriteExpr(node.Expr);
+            if (expr == node.Expr)
+                return node;
+
+            return new BoundConversionExpr(node.Type, expr);
         }
     }
 }

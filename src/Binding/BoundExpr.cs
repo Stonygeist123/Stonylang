@@ -1,7 +1,6 @@
-﻿using Stonylang.Lexer;
-using Stonylang.Symbols;
-using Stonylang.Utility;
+﻿using Stonylang.Symbols;
 using System;
+using System.Collections.Immutable;
 
 namespace Stonylang.Binding
 {
@@ -9,14 +8,18 @@ namespace Stonylang.Binding
     {
         // Exprs
         LiteralExpr,
+
         UnaryExpr,
         BinaryExpr,
         VariableExpr,
         AssignmentExpr,
+        CallExpr,
+        ConversionExpr,
         ErrorExpr,
 
         // Stmts
         BlockStatement,
+
         VariableStatement,
         IfStatement,
         WhileStatement,
@@ -74,14 +77,15 @@ namespace Stonylang.Binding
             {
                 bool => TypeSymbol.Bool,
                 int => TypeSymbol.Int,
+                double => TypeSymbol.Float,
                 string => TypeSymbol.String,
                 _ => throw new Exception($"Unexpected literal \"{value}\" of type {value.GetType()}.")
             };
         }
-        public override TypeSymbol Type { get; }
-        public override BoundNodeKind Kind => BoundNodeKind.LiteralExpr;
-        public object Value { get; }
 
+        public override BoundNodeKind Kind => BoundNodeKind.LiteralExpr;
+        public override TypeSymbol Type { get; }
+        public object Value { get; }
     }
 
     internal sealed class BoundUnaryExpr : BoundExpr
@@ -92,8 +96,8 @@ namespace Stonylang.Binding
             Operand = operand;
         }
 
-        public override TypeSymbol Type => Op.ResultType;
         public override BoundNodeKind Kind => BoundNodeKind.UnaryExpr;
+        public override TypeSymbol Type => Op.ResultType;
         public BoundUnaryOperator Op { get; }
         public BoundExpr Operand { get; }
     }
@@ -107,8 +111,8 @@ namespace Stonylang.Binding
             Right = right;
         }
 
-        public override TypeSymbol Type => Op.ResultType;
         public override BoundNodeKind Kind => BoundNodeKind.BinaryExpr;
+        public override TypeSymbol Type => Op.ResultType;
         public BoundExpr Left { get; }
         public BoundBinaryOperator Op { get; }
         public BoundExpr Right { get; }
@@ -117,10 +121,9 @@ namespace Stonylang.Binding
     internal sealed class BoundVariableExpr : BoundExpr
     {
         public BoundVariableExpr(VariableSymbol variable) => Variable = variable;
-
-        public VariableSymbol Variable { get; }
-        public override TypeSymbol Type => Variable.Type;
         public override BoundNodeKind Kind => BoundNodeKind.VariableExpr;
+        public override TypeSymbol Type => Variable.Type;
+        public VariableSymbol Variable { get; }
     }
 
     internal sealed class BoundAssignmentExpr : BoundExpr
@@ -131,15 +134,42 @@ namespace Stonylang.Binding
             Value = value;
         }
 
+        public override BoundNodeKind Kind => BoundNodeKind.AssignmentExpr;
+        public override TypeSymbol Type => Variable.Type;
         public VariableSymbol Variable { get; }
         public BoundExpr Value { get; }
-        public override TypeSymbol Type => Variable.Type;
-        public override BoundNodeKind Kind => BoundNodeKind.AssignmentExpr;
+    }
+
+    internal sealed class BoundCallExpr : BoundExpr
+    {
+        public BoundCallExpr(FunctionSymbol function, ImmutableArray<BoundExpr> arguments)
+        {
+            Function = function;
+            Arguments = arguments;
+        }
+
+        public override BoundNodeKind Kind => BoundNodeKind.CallExpr;
+        public override TypeSymbol Type => Function.Type;
+        public FunctionSymbol Function { get; }
+        public ImmutableArray<BoundExpr> Arguments { get; }
+    }
+
+    internal sealed class BoundConversionExpr : BoundExpr
+    {
+        public BoundConversionExpr(TypeSymbol type, BoundExpr expr)
+        {
+            Type = type;
+            Expr = expr;
+        }
+
+        public override BoundNodeKind Kind => BoundNodeKind.ConversionExpr;
+        public override TypeSymbol Type { get; }
+        public BoundExpr Expr { get; }
     }
 
     internal sealed class BoundErrorExpr : BoundExpr
     {
-        public override TypeSymbol Type => TypeSymbol.Error;
         public override BoundNodeKind Kind => BoundNodeKind.ErrorExpr;
+        public override TypeSymbol Type => TypeSymbol.Error;
     }
 }

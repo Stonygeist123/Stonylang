@@ -12,8 +12,12 @@ namespace Stonylang.Lowering
     internal sealed class Lowerer : BoundTreeRewriter
     {
         private int _labelCount;
-        private Lowerer() { }
+
+        private Lowerer()
+        { }
+
         public static BoundBlockStmt Lower(BoundStmt stmt) => Flatten(new Lowerer().RewriteStmt(stmt));
+
         private BoundLabel GenerateLabel() => new($"Label{++_labelCount}");
 
         private static BoundBlockStmt Flatten(BoundStmt stmt)
@@ -41,7 +45,11 @@ namespace Stonylang.Lowering
                 BoundLabel endLabel = GenerateLabel();
                 BoundConditionalGoToStmt gotoFalse = new(endLabel, node.Condition, false);
                 BoundLabelStmt endLabelStmt = new(endLabel);
-                BoundBlockStmt result = new(ImmutableArray.Create<BoundStmt>(gotoFalse, node.ThenBranch, endLabelStmt));
+                BoundBlockStmt result = new(ImmutableArray.Create<BoundStmt>(
+                    gotoFalse,
+                    node.ThenBranch,
+                    endLabelStmt
+                ));
                 return RewriteStmt(result);
             }
             else
@@ -53,24 +61,54 @@ namespace Stonylang.Lowering
                 BoundGoToStmt gotoEndStmt = new(endLabel);
                 BoundLabelStmt elseLabelStmt = new(elseLabel);
                 BoundLabelStmt endLabelStmt = new(endLabel);
-                BoundBlockStmt result = new(ImmutableArray.Create<BoundStmt>(gotoFalse, node.ThenBranch, gotoEndStmt, elseLabelStmt, node.ElseBranch, endLabelStmt));
+                BoundBlockStmt result = new(ImmutableArray.Create<BoundStmt>(
+                    gotoFalse,
+                    node.ThenBranch,
+                    gotoEndStmt,
+                    elseLabelStmt,
+                    node.ElseBranch,
+                    endLabelStmt
+                ));
                 return RewriteStmt(result);
             }
         }
 
         protected override BoundStmt RewriteWhileStmt(BoundWhileStmt node)
         {
-            BoundLabel continueLabel = GenerateLabel();
-            BoundLabel checkLabel = GenerateLabel();
-            BoundLabel endLabel = GenerateLabel();
+            if (node.IsDoWhile)
+            {
+                BoundLabel continueLabel = GenerateLabel();
+                BoundLabelStmt continueLabelStmt = new(continueLabel);
+                BoundConditionalGoToStmt gotoTrue = new(continueLabel, node.Condition);
+                BoundBlockStmt result = new(ImmutableArray.Create<BoundStmt>(
+                    continueLabelStmt,
+                    node.Stmt,
+                    gotoTrue
+                ));
 
-            BoundGoToStmt gotoCheck = new(checkLabel);
-            BoundLabelStmt continueLabelStmt = new(continueLabel);
-            BoundLabelStmt checkLabelStmt = new(checkLabel);
-            BoundConditionalGoToStmt gotoTrue = new(continueLabel, node.Condition);
-            BoundLabelStmt endLabelStmt = new(endLabel);
-            BoundBlockStmt result = new(ImmutableArray.Create<BoundStmt>(gotoCheck, continueLabelStmt, node.Stmt, checkLabelStmt, gotoTrue, endLabelStmt));
-            return RewriteStmt(result);
+                return RewriteStmt(result);
+            }
+            else
+            {
+                BoundLabel continueLabel = GenerateLabel();
+                BoundLabel checkLabel = GenerateLabel();
+                BoundLabel endLabel = GenerateLabel();
+
+                BoundGoToStmt gotoCheck = new(checkLabel);
+                BoundLabelStmt continueLabelStmt = new(continueLabel);
+                BoundLabelStmt checkLabelStmt = new(checkLabel);
+                BoundConditionalGoToStmt gotoTrue = new(continueLabel, node.Condition);
+                BoundLabelStmt endLabelStmt = new(endLabel);
+                BoundBlockStmt result = new(ImmutableArray.Create<BoundStmt>(
+                    gotoCheck,
+                    continueLabelStmt,
+                    node.Stmt,
+                    checkLabelStmt,
+                    gotoTrue,
+                    endLabelStmt
+                ));
+                return RewriteStmt(result);
+            }
         }
 
         protected override BoundStmt RewriteForStmt(BoundForStmt node)
@@ -80,13 +118,17 @@ namespace Stonylang.Lowering
             VariableSymbol upperBoundSymbol = new("upperBound", TypeSymbol.Int, null, null, true);
             BoundVariableStmt upperBoundDecl = new(upperBoundSymbol, node.Range);
 
-            BoundBinaryExpr condition = new(variableExpr, BoundBinaryOperator.Bind(SyntaxKind.LessEq, TypeSymbol.Int, TypeSymbol.Int), new BoundVariableExpr(upperBoundSymbol));
+            BoundBinaryExpr condition = new(variableExpr, BoundBinaryOperator.Bind(SyntaxKind.Less, TypeSymbol.Int, TypeSymbol.Int), new BoundVariableExpr(upperBoundSymbol));
             BoundExpressionStmt increment = new(new BoundAssignmentExpr(node.Variable,
                 new BoundBinaryExpr(variableExpr, BoundBinaryOperator.Bind(SyntaxKind.Plus, TypeSymbol.Int, TypeSymbol.Int), new BoundLiteralExpr(1))));
 
             BoundBlockStmt whileBody = new(ImmutableArray.Create<BoundStmt>(node.Stmt, increment));
             BoundWhileStmt whileStmt = new(condition, whileBody, false);
-            BoundBlockStmt result = new(ImmutableArray.Create<BoundStmt>(variableDecl, upperBoundDecl, whileStmt));
+            BoundBlockStmt result = new(ImmutableArray.Create<BoundStmt>(
+                variableDecl,
+                upperBoundDecl,
+                whileStmt
+            ));
             return RewriteStmt(result);
         }
     }

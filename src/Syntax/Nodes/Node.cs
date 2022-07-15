@@ -14,6 +14,7 @@ namespace Stonylang.Parser
         public abstract SyntaxKind Kind { get; }
 
         public void WriteTo(TextWriter writer) => PrettyPrint(writer, this);
+
         private static void PrettyPrint(TextWriter writer, Node node, string indent = "", bool isLast = true)
         {
             if (node == null) return;
@@ -50,9 +51,10 @@ namespace Stonylang.Parser
         }
 
         public Token GetLastToken() => this is Token t ? t : GetChildren().Last().GetLastToken();
+
         public new string ToString()
         {
-            using StringWriter writer = new StringWriter();
+            using StringWriter writer = new();
             WriteTo(writer);
             return writer.ToString();
         }

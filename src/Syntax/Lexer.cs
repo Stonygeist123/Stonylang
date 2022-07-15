@@ -1,5 +1,7 @@
 ﻿using Stonylang.SyntaxFacts;
 using Stonylang.Utility;
+using System;
+using System.Globalization;
 using System.Text;
 
 namespace Stonylang.Lexer
@@ -15,7 +17,9 @@ namespace Stonylang.Lexer
         private object _value;
 
         public Lexer(SourceText source) => _source = source;
+
         private char Current => Peek();
+
         private char Peek(int offset = 0) => _position + offset >= _source.Length ? '\0' : _source[_position + offset];
 
         private void ReadString()
@@ -46,6 +50,7 @@ namespace Stonylang.Lexer
                             ++_position;
                         }
                         break;
+
                     default:
                         sb.Append(Current);
                         ++_position;
@@ -59,16 +64,37 @@ namespace Stonylang.Lexer
 
         private void ReadNumber()
         {
+            bool isFloat = false;
             while (char.IsDigit(Current)) Advance();
-            if (!int.TryParse(_source.ToString()[_start.._position], out int value))
-                _diagnostics.Report(_source, new(_start, _position - _start),
-                    $"Invalid integer literal \"{ _source.ToString()[_start.._position]}\".", "SyntaxException", LogLevel.Error);
 
-            _kind = SyntaxKind.Number;
-            _value = value;
+            if (Current == '.')
+            {
+                isFloat = true;
+                do { Advance(); }
+                while (char.IsDigit(Current));
+            }
+
+            if (isFloat)
+            {
+                if (!double.TryParse(_source.ToString()[_start.._position], NumberStyles.Float, CultureInfo.InvariantCulture, out double value))
+                    _diagnostics.Report(_source, new(_start, _position - _start),
+                        $"Invalid float literal \"{_source.ToString()[_start.._position]}\".", "SyntaxException", LogLevel.Error);
+                _kind = SyntaxKind.Float;
+                _value = value;
+            }
+            else
+            {
+                if (!int.TryParse(_source.ToString()[_start.._position], out int value))
+                    _diagnostics.Report(_source, new(_start, _position - _start),
+                            $"Invalid integer literal \"{_source.ToString()[_start.._position]}\".", "SyntaxException", LogLevel.Error);
+                _kind = SyntaxKind.Int;
+                _value = value;
+            }
+
         }
 
         private void Advance() => ++_position;
+
         private void ReadWhitespace()
         {
             while (char.IsWhiteSpace(Current)) Advance();
@@ -86,6 +112,7 @@ namespace Stonylang.Lexer
                 case '\0':
                     _kind = SyntaxKind.EOF;
                     break;
+
                 case '+':
                     if (Peek(1) == '=')
                     {
@@ -103,6 +130,7 @@ namespace Stonylang.Lexer
                         _kind = SyntaxKind.Plus;
                     }
                     break;
+
                 case '-':
                     if (Peek(1) == '=')
                     {
@@ -114,12 +142,18 @@ namespace Stonylang.Lexer
                         _position += 2;
                         _kind = SyntaxKind.Decrement;
                     }
+                    else if (Peek(1) == '>')
+                    {
+                        _position += 2;
+                        _kind = SyntaxKind.Arrow;
+                    }
                     else
                     {
                         ++_position;
                         _kind = SyntaxKind.Minus;
                     }
                     break;
+
                 case '*':
                     if (Peek(1) == '*')
                     {
@@ -145,6 +179,7 @@ namespace Stonylang.Lexer
                         _kind = SyntaxKind.Star;
                     }
                     break;
+
                 case '/':
                     if (Peek(1) == '=')
                     {
@@ -157,6 +192,7 @@ namespace Stonylang.Lexer
                         _kind = SyntaxKind.Slash;
                     }
                     break;
+
                 case '%':
                     if (Peek(1) == '=')
                     {
@@ -169,22 +205,27 @@ namespace Stonylang.Lexer
                         _kind = SyntaxKind.Mod;
                     }
                     break;
+
                 case '(':
                     ++_position;
                     _kind = SyntaxKind.LParen;
                     break;
+
                 case ')':
                     ++_position;
                     _kind = SyntaxKind.RParen;
                     break;
+
                 case '{':
                     ++_position;
                     _kind = SyntaxKind.LBrace;
                     break;
+
                 case '}':
                     ++_position;
                     _kind = SyntaxKind.RBrace;
                     break;
+
                 case '&':
                     if (Peek(1) == '&')
                     {
@@ -202,6 +243,7 @@ namespace Stonylang.Lexer
                         _kind = SyntaxKind.And;
                     }
                     break;
+
                 case '|':
                     if (Peek(1) == '|')
                     {
@@ -219,6 +261,7 @@ namespace Stonylang.Lexer
                         _kind = SyntaxKind.Or;
                     }
                     break;
+
                 case '^':
                     if (Peek(1) == '=')
                     {
@@ -231,10 +274,12 @@ namespace Stonylang.Lexer
                         _kind = SyntaxKind.Xor;
                     }
                     break;
+
                 case '~':
                     ++_position;
                     _kind = SyntaxKind.Inv;
                     break;
+
                 case '=':
                     if (Peek(1) == '=')
                     {
@@ -247,6 +292,7 @@ namespace Stonylang.Lexer
                         _kind = SyntaxKind.Equals;
                     }
                     break;
+
                 case '!':
                     if (Peek(1) == '=')
                     {
@@ -259,6 +305,7 @@ namespace Stonylang.Lexer
                         _kind = SyntaxKind.Not;
                     }
                     break;
+
                 case '>':
                     if (Peek(1) == '>')
                     {
@@ -284,6 +331,7 @@ namespace Stonylang.Lexer
                         _kind = SyntaxKind.Greater;
                     }
                     break;
+
                 case '<':
                     if (Peek(1) == '<')
                     {
@@ -309,18 +357,32 @@ namespace Stonylang.Lexer
                         _kind = SyntaxKind.Less;
                     }
                     break;
+
                 case '"':
                     ReadString();
                     break;
+
+                case ',':
+                    ++_position;
+                    _kind = SyntaxKind.Comma;
+                    break;
+
+                case ':':
+                    ++_position;
+                    _kind = SyntaxKind.Colon;
+                    break;
+
                 case ' ':
                 case '\t':
                 case '\r':
                     ReadWhitespace();
                     break;
+
                 case '\n':
                     ReadWhitespace();
                     ++_line;
                     break;
+
                 default:
                     if (char.IsDigit(Current)) ReadNumber();
                     else if (char.IsWhiteSpace(Current)) ReadWhitespace();

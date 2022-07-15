@@ -1,5 +1,4 @@
-﻿using Stonylang.SyntaxFacts;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -10,6 +9,7 @@ namespace Stonylang.Binding
     internal abstract class BoundNode
     {
         public abstract BoundNodeKind Kind { get; }
+
         public IEnumerable<BoundNode> GetChildren()
         {
             foreach (PropertyInfo prop in GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance))
@@ -51,6 +51,7 @@ namespace Stonylang.Binding
         }
 
         public void WriteTo(TextWriter writer) => PrettyPrint(writer, this);
+
         private static void PrettyPrint(TextWriter writer, BoundNode node, string indent = "", bool isLast = true)
         {
             bool isConsole = writer == Console.Out;
@@ -107,6 +108,7 @@ namespace Stonylang.Binding
         }
 
         private static string GetText(BoundNode node) => node.Kind.ToString();
+
         public new string ToString()
         {
             using StringWriter writer = new StringWriter();

@@ -1,9 +1,9 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using Stonylang.Utility;
-using Stonylang.Lexer;
+﻿using Stonylang.Lexer;
 using Stonylang.SyntaxFacts;
+using Stonylang.Utility;
+using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Linq;
 
 namespace Stonylang.Parser
 {
@@ -31,7 +31,8 @@ namespace Stonylang.Parser
             _source = source;
         }
 
-        public CompilationUnitSyntax ParseCompilationUnit() => new CompilationUnitSyntax(ParseStatement(), Match(SyntaxKind.EOF));
+        public CompilationUnitSyntax ParseCompilationUnit() => new(ParseStatement(), Match(SyntaxKind.EOF));
+
         public StmtNode ParseStatement()
         {
             return Current.Kind switch
@@ -65,9 +66,15 @@ namespace Stonylang.Parser
             Token varKeyword = Advance();
             Token mutKeyword = Current.Kind == SyntaxKind.MutKeyword ? Match(SyntaxKind.MutKeyword) : null;
             Token identifier = Match(SyntaxKind.Identifier);
+            Token type = null;
+            if (Current.Kind == SyntaxKind.Colon)
+            {
+                Match(SyntaxKind.Colon);
+                type = Match(SyntaxKind.Identifier);
+            }
             Match(SyntaxKind.Equals);
             ExprNode initializr = ParseExpression();
-            return new VariableStmt(varKeyword, identifier, initializr, mutKeyword != null);
+            return new VariableStmt(varKeyword, identifier, initializr, mutKeyword != null, type);
         }
 
         private IfStmt ParseIfStmt()
@@ -81,15 +88,14 @@ namespace Stonylang.Parser
 
         private WhileStmt ParseWhileStmt()
         {
-            bool isDoWhile = Current.Kind == SyntaxKind.DoKeyword;
-            if (isDoWhile)
+            if (Current.Kind == SyntaxKind.DoKeyword)
             {
-                Match(SyntaxKind.DoKeyword);
+                Token doKeyword = Match(SyntaxKind.DoKeyword);
                 BlockStmt thenBranch = ParseBlockStmt();
                 Token keyword = Match(SyntaxKind.WhileKeyword);
-                return new(keyword, ParseExpression(), thenBranch, isDoWhile);
+                return new(keyword, ParseExpression(), thenBranch, doKeyword);
             }
-            return new(Match(SyntaxKind.WhileKeyword), Current.Kind == SyntaxKind.LBrace ? null : ParseExpression(), ParseBlockStmt(), isDoWhile);
+            return new(Match(SyntaxKind.WhileKeyword), Current.Kind == SyntaxKind.LBrace ? null : ParseExpression(), ParseBlockStmt());
         }
 
         private ForStmt ParseForStmt()
@@ -108,7 +114,7 @@ namespace Stonylang.Parser
             return new(keyword, identifier, isMut, initialValue, range, stmt);
         }
 
-        private ExpressionStmt ParseExpressionStmt() => new ExpressionStmt(ParseExpression());
+        private ExpressionStmt ParseExpressionStmt() => new(ParseExpression());
 
         private ExprNode ParseExpression() => ParseAssignmentExpr();
         private ExprNode ParseAssignmentExpr()
@@ -175,9 +181,9 @@ namespace Stonylang.Parser
         {
             SyntaxKind.LParen => ParseGroupingExpr(),
             SyntaxKind.TrueKeyword or SyntaxKind.FalseKeyword => ParseBoolLiteral(),
-            SyntaxKind.Identifier => ParseNameExpr(),
+            SyntaxKind.Int or SyntaxKind.Float => ParseNumberExpr(),
             SyntaxKind.String => ParseStringLiteral(),
-            SyntaxKind.Number or _ => ParseNumberLiteral(),
+            SyntaxKind.Identifier or _ => ParseNameOrCallExpr(),
         };
 
         private ExprNode ParseGroupingExpr()
@@ -195,9 +201,39 @@ namespace Stonylang.Parser
             return new LiteralExpr(kw, isTrue);
         }
 
-        private ExprNode ParseNumberLiteral() => new LiteralExpr(Match(SyntaxKind.Number, "Expected expression."));
         private ExprNode ParseStringLiteral() => new LiteralExpr(Match(SyntaxKind.String));
-        private ExprNode ParseNameExpr() => new NameExpr(Match(SyntaxKind.Identifier));
+        private ExprNode ParseNumberExpr() => new LiteralExpr(Current.Kind == SyntaxKind.Int ? Match(SyntaxKind.Int) : Match(SyntaxKind.Float));
+        private ExprNode ParseNameOrCallExpr()
+        {
+            if (Current.Kind == SyntaxKind.Identifier && Peek(1).Kind == SyntaxKind.LParen)
+                return ParseCallExpr();
+            return new NameExpr(Match(SyntaxKind.Identifier, "Expected expression."));
+        }
+
+        private ExprNode ParseCallExpr()
+        {
+            Token identifier = Match(SyntaxKind.Identifier);
+            Token lParen = Match(SyntaxKind.LParen);
+            SeparatedSyntaxList<ExprNode> arguments = ParseArguments();
+            return new CallExpr(identifier, lParen, arguments, Match(SyntaxKind.RParen));
+        }
+
+        private SeparatedSyntaxList<ExprNode> ParseArguments()
+        {
+            ImmutableArray<Node>.Builder nodesAndSeparators = ImmutableArray.CreateBuilder<Node>();
+            while (Current.Kind != SyntaxKind.EOF && Current.Kind != SyntaxKind.RParen)
+            {
+                ExprNode expr = ParseExpression();
+                nodesAndSeparators.Add(expr);
+
+                if (Current.Kind != SyntaxKind.RParen)
+                {
+                    Token comma = Match(SyntaxKind.Comma);
+                    nodesAndSeparators.Add(comma);
+                }
+            }
+            return new(nodesAndSeparators.ToImmutableArray<Node>());
+        }
 
         private Token Peek(int offset = 0) => _position + offset >= _tokens.Length ? _tokens.Last() : _tokens[_position + offset];
         private Token Current => Peek();
@@ -207,6 +243,7 @@ namespace Stonylang.Parser
             ++_position;
             return c;
         }
+
         private Token Match(SyntaxKind expected, string errorMessage = "")
         {
             if (Current.Kind == expected) return Advance();

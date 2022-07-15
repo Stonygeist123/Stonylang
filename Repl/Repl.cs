@@ -16,6 +16,7 @@ namespace Stonylang
         private readonly List<string> _submissionHistory = new();
         private int _submissionHistoryIndex;
         private bool _done;
+
         public void Run()
         {
             while (true)
@@ -55,6 +56,7 @@ namespace Stonylang
             }
 
             private void SubmissionDocumentChanged(object sender, NotifyCollectionChangedEventArgs e) => Render();
+
             private void Render()
             {
                 Console.CursorVisible = false;
@@ -110,6 +112,7 @@ namespace Stonylang
                     }
                 }
             }
+
             public int CurrentCharacter
             {
                 get => _currentCharacter;
@@ -151,39 +154,51 @@ namespace Stonylang
                     case ConsoleKey.Escape:
                         HandleEscape(document, view);
                         break;
+
                     case ConsoleKey.Enter:
                         HandleEnter(document, view);
                         break;
+
                     case ConsoleKey.LeftArrow:
                         HandleLeftArrow(view);
                         break;
+
                     case ConsoleKey.RightArrow:
                         HandleRightArrow(document, view);
                         break;
+
                     case ConsoleKey.UpArrow:
                         HandleUpArrow(view);
                         break;
+
                     case ConsoleKey.DownArrow:
                         HandleDownArrow(document, view);
                         break;
+
                     case ConsoleKey.Backspace:
                         HandleBackSpace(document, view);
                         break;
+
                     case ConsoleKey.Delete:
                         HandleDelete(document, view);
                         break;
+
                     case ConsoleKey.Home:
                         HandleHome(view);
                         break;
+
                     case ConsoleKey.End:
                         HandleEnd(document, view);
                         break;
+
                     case ConsoleKey.Tab:
                         HandleTab(document, view);
                         break;
+
                     case ConsoleKey.PageUp:
                         HandlePageUp(document, view);
                         break;
+
                     case ConsoleKey.PageDown:
                         HandlePageDown(document, view);
                         break;
@@ -207,6 +222,7 @@ namespace Stonylang
         }
 
         private static void HandleControlEnter(ObservableCollection<string> document, SubmissionView view) => InsertLine(document, view);
+
         private void HandleEnter(ObservableCollection<string> document, SubmissionView view)
         {
             string submissionText = string.Join(Environment.NewLine, document);
@@ -222,7 +238,7 @@ namespace Stonylang
         private static void InsertLine(ObservableCollection<string> document, SubmissionView view)
         {
             string remainder = document[view.CurrentLine][view.CurrentCharacter..];
-            document[view.CurrentLine] = document[view.CurrentLine].Substring(0, view.CurrentCharacter);
+            document[view.CurrentLine] = document[view.CurrentLine][..view.CurrentCharacter];
 
             int lineIndex = view.CurrentLine + 1;
             document.Insert(lineIndex, remainder);
@@ -274,7 +290,7 @@ namespace Stonylang
             {
                 int lineIndex = view.CurrentLine;
                 string line = document[lineIndex];
-                string before = line.Substring(0, start - 1);
+                string before = line[..(start - 1)];
                 string after = line[start..];
                 document[lineIndex] = before + after;
                 view.CurrentCharacter--;
@@ -297,13 +313,15 @@ namespace Stonylang
                 return;
             }
 
-            string before = line.Substring(0, start);
+            string before = line[..start];
             string after = line[(start + 1)..];
             document[lineIndex] = before + after;
         }
 
         private static void HandleHome(SubmissionView view) => view.CurrentCharacter = 0;
+
         private static void HandleEnd(ObservableCollection<string> document, SubmissionView view) => view.CurrentCharacter = document[view.CurrentLine].Length;
+
         private static void HandleTab(ObservableCollection<string> document, SubmissionView view)
         {
             const int TabWidth = 4;
@@ -353,9 +371,13 @@ namespace Stonylang
         }
 
         protected virtual void RenderLine(string line) => Console.Write(line);
+
         protected void ClearHistory() => _submissionHistory.Clear();
+
         protected abstract void EvaluateMetaCommand(string input);
+
         protected abstract bool IsCompleteSubmission(string text);
+
         protected abstract void EvaluateSubmission(string input);
     }
 
@@ -372,12 +394,16 @@ namespace Stonylang
                 foreach (Token token in tokens)
                 {
                     bool isKeyword = token.Kind.ToString().EndsWith("Keyword");
-                    bool isNumber = token.Kind == SyntaxKind.Number;
                     bool isIdentifier = token.Kind == SyntaxKind.Identifier;
+                    bool isString = token.Kind == SyntaxKind.String;
+                    bool isNumber = token.Kind == SyntaxKind.Int || token.Kind == SyntaxKind.Float;
+
                     if (isKeyword)
                         Console.ForegroundColor = ConsoleColor.Blue;
                     else if (isIdentifier)
                         Console.ForegroundColor = ConsoleColor.DarkYellow;
+                    else if (isString)
+                        Console.ForegroundColor = ConsoleColor.DarkGreen;
                     else if (isNumber)
                         Console.ForegroundColor = ConsoleColor.Cyan;
                     else
@@ -402,8 +428,9 @@ namespace Stonylang
                 return true;
 
             SyntaxTree.SyntaxTree syntaxTree = SyntaxTree.SyntaxTree.Parse(text);
-            return !syntaxTree.Diagnostics.Any();//.Root.Statement.GetLastToken().IsMissing;
+            return !syntaxTree.Root.Statement.GetLastToken().IsMissing;
         }
+
         protected override void EvaluateMetaCommand(string input)
         {
             switch (input.ToLower())
@@ -412,16 +439,20 @@ namespace Stonylang
                     _showTree ^= true;
                     Console.WriteLine(_showTree ? "Showing parse trees." : "Not showing parse trees.");
                     break;
+
                 case "#showprogram":
                     _showProgram ^= true;
                     Console.WriteLine(_showProgram ? "Showing program." : "Not showing program.");
                     break;
+
                 case "#cls":
                     Console.Clear();
                     break;
+
                 case "#reset":
                     _previous = null;
                     break;
+
                 default:
                     Console.ForegroundColor = ConsoleColor.Red;
                     Console.WriteLine($"Invalid command \"{input}\"");
@@ -444,22 +475,23 @@ namespace Stonylang
             if (diagnostics.Any())
                 foreach (Diagnostic diagnostic in diagnostics)
                     diagnostic.Print();
-            else
-            {
-                _previous = compilation;
-                if (_showTree)
-                {
-                    Console.ForegroundColor = ConsoleColor.DarkGray;
-                    syntaxTree.Root.WriteTo(Console.Out);
-                    Console.ResetColor();
-                }
-                if (_showProgram)
-                    compilation.EmitTree(Console.Out);
 
-                Console.ForegroundColor = ConsoleColor.Magenta;
-                Console.WriteLine(result.Value);
+            if (_showTree)
+            {
+                Console.ForegroundColor = ConsoleColor.DarkGray;
+                syntaxTree.Root.WriteTo(Console.Out);
                 Console.ResetColor();
             }
+            if (_showProgram)
+                compilation.EmitTree(Console.Out);
+
+            if (result.Value != null)
+            {
+                Console.ForegroundColor = ConsoleColor.White;
+                Console.WriteLine(Evaluator.Evaluator.Stringify(result.Value));
+                Console.ResetColor();
+            }
+            _previous = compilation;
         }
     }
 }

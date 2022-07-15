@@ -1,7 +1,5 @@
 ﻿using Stonylang.Parser;
 using Stonylang.Utility;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace Stonylang.Lexer
 {
@@ -24,30 +22,36 @@ namespace Stonylang.Lexer
 
         // Assignment
         Equals, PlusEq, MinusEq, StarEq, SlashEq, PowerEq,
+
         ModEq, XorEq, OrEq, AndEq, LshEq, RshEq,
 
         // Strict Unary
         Inv,
+
         Not,
 
         // Literals
-        Number, String, Identifier,
+        Int, Float, String, Identifier,
 
         // Keywords
         FnKeyword, ClassKeyword, IfKeyword, ElseKeyword, SwitchKeyword, CaseKeyword, DefaultKeyword,
+
         VarKeyword, MutKeyword, BreakKeyword, ContinueKeyword, TrueKeyword, FalseKeyword, ReturnKeyword,
         WhileKeyword, DoKeyword, ForKeyword, AsyncKeyword, AwaitKeyword, GoToKeyword, ToKeyword,
 
         // Others
         Semicolon, Comma, LParen, RParen, LBrace, RBrace,
+
         LBracket, RBracket, Arrow, QuestionMark, Colon,
 
         // Exprs
         LiteralExpr, GroupingExpr, UnaryExpr, BinaryExpr,
-        NameExpr, AssignmentExpr,
+
+        NameExpr, AssignmentExpr, CallExpr,
 
         // Stmts
         ExpressionStmt, BlockStmt, VariableStmt,
+
         IfStmt, ElseClauseStmt, WhileStmt, ForStmt,
 
         // Nodes
@@ -55,6 +59,7 @@ namespace Stonylang.Lexer
 
         Whitespace, Bad, EOF
     }
+
     public class Token : Node
     {
         public Token(SyntaxKind _kind, string _lexeme, object _literal, TextSpan _span, int _line)
@@ -72,6 +77,7 @@ namespace Stonylang.Lexer
         public int Line { get; }
         public override TextSpan Span { get; }
         public bool IsMissing => string.IsNullOrEmpty(Lexeme);
+
         public new string ToString() => $"Kind: {Kind}\nLexeme: {Lexeme}\nPosition: [{Span.Start}-{Span.Start + Span.Length}]{(Literal != null ? $"\nLiteral: {Literal}" : "")}";
     }
 }

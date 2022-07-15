@@ -4,11 +4,13 @@ using System.Collections.Immutable;
 
 namespace Stonylang.Binding
 {
-    internal abstract class BoundStmt : BoundNode { }
+    internal abstract class BoundStmt : BoundNode
+    { }
 
     internal sealed class BoundBlockStmt : BoundStmt
     {
         public BoundBlockStmt(ImmutableArray<BoundStmt> statements) => Statements = statements;
+
         public override BoundNodeKind Kind => BoundNodeKind.BlockStatement;
         public ImmutableArray<BoundStmt> Statements { get; }
     }
@@ -16,6 +18,7 @@ namespace Stonylang.Binding
     internal sealed class BoundExpressionStmt : BoundStmt
     {
         public BoundExpressionStmt(BoundExpr expression) => Expression = expression;
+
         public override BoundNodeKind Kind => BoundNodeKind.ExpressionStatement;
         public BoundExpr Expression { get; }
     }
@@ -83,6 +86,7 @@ namespace Stonylang.Binding
     internal sealed class BoundGoToStmt : BoundStmt
     {
         public BoundGoToStmt(BoundLabel label) => Label = label;
+
         public override BoundNodeKind Kind => BoundNodeKind.GoToStatement;
         public BoundLabel Label { get; }
     }
@@ -105,6 +109,7 @@ namespace Stonylang.Binding
     internal sealed class BoundLabelStmt : BoundStmt
     {
         public BoundLabelStmt(BoundLabel label) => Label = label;
+
         public override BoundNodeKind Kind => BoundNodeKind.LabelStatement;
         public BoundLabel Label { get; }
     }
